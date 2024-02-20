@@ -1,6 +1,6 @@
 library(leaflet)
 library(shinyjs)
-  
+
 
 # Define UI for application that draws a histogram
 ui <- navbarPage("Data Explorer", id="nav",
@@ -8,18 +8,18 @@ ui <- navbarPage("Data Explorer", id="nav",
                     sidebarPanel(
                       inputPanel(
                                shinyWidgets::awesomeCheckboxGroup('source', "Data source",
-                                                          choices = unique(all_events$source), 
+                                                          choices = unique(all_events$source),
                                                           selected = unique(all_events$source),
                                                           inline = T
                                             ),
                        shinyWidgets::awesomeCheckboxGroup('type', "Data type",
-                                                          choices = unique(all_events$type), 
-                                                          selected = c("ARU recording", 
+                                                          choices = unique(all_events$type),
+                                                          selected = c("ARU recording",
                                                                        "Checklist",
                                                                        "Point Count"),inline = T
                        ),
                        sliderInput('years', "Years included", value = c(2021, 2023),
-                                   min = min(all_events$year, na.rm = T), 
+                                   min = min(all_events$year, na.rm = T),
                                    max =max(all_events$year, na.rm = T), sep = ""),
                        dateRangeInput('daterange',"Range of dates (ignore year)",
                                       start = "2024-05-01", end = "2024-07-10",
@@ -36,7 +36,7 @@ ui <- navbarPage("Data Explorer", id="nav",
                                    min = ceiling(t2sr_range[[1]]),
                                    max = ceiling(t2sr_range[[2]]),
                                    step = 5),
-                       checkboxInput("include_missing_times", 
+                       checkboxInput("include_missing_times",
                                      "Include data with missing times?",
                                      value = FALSE),
                        conditionalPanel("input.time_period.includes('Dusk')||input.time_period.includes('Night')",
@@ -51,7 +51,7 @@ ui <- navbarPage("Data Explorer", id="nav",
                     mainPanel(
                       plotOutput("event_summary", width = "100%", height = '800px')
                     )
-                    
+
            ),
            tabPanel("Interactive map",
                     div(class="outer",
@@ -63,18 +63,23 @@ ui <- navbarPage("Data Explorer", id="nav",
                               ),
                               # If not using custom CSS, set height of leafletOutput to a number instead of percent
                               leafletOutput("map", width="100%", height="100%"),
-                              
+
                               # # Shiny versions prior to 0.11 should use class = "modal" instead.
                               absolutePanel(id = "show-panel", class = "panel panel-default", fixed = TRUE,
                                             draggable = TRUE, top = 120, left = 10, right = 'auto', bottom = "auto",
-                                            width = 80, height = "auto",
-                                            checkboxInput("showMenu", "Show menu?", TRUE), 
-                                            checkboxInput("cluster", "Cluster points?", TRUE), 
-                                            checkboxInput("show_effort", "Show effort?", FALSE) 
-                                            # checkboxInput("showExclude", "Adjust exclusions?", FALSE) 
+                                            width = 'auto', height = "auto",
+                                            checkboxInput("showMenu", "Show menu?", TRUE),
+                                            checkboxInput("cluster", "Cluster points?", TRUE),
+                                            conditionalPanel(id = "spp-plots",
+                                                             condition = "input.data_layer=='Species Observations'",
+                                                             checkboxInput("show_effort", "Show effort?", FALSE),
+                                                             plotOutput("p_obs", height = 500),
+                                                             plotOutput("hist", height = 200)
+                                            )
+                                            # checkboxInput("showExclude", "Adjust exclusions?", FALSE)
                                             ),
-                        
-                        
+
+
                         absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                                       draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
                                       width = 330, height = "auto",
@@ -83,9 +88,8 @@ ui <- navbarPage("Data Explorer", id="nav",
                                       radioButtons("data_layer", "Data layer", choices = c("None", "Surveyed Locations", "Species Observations"),
                                                    selected = "None"),
                                       conditionalPanel(id = "spp-control",condition = "input.data_layer=='Species Observations'",
-                                                    selectInput("species", "Select species to examine", all_species),
-                                                    plotOutput("p_obs", height = 500),
-                                                    plotOutput("hist", height = 200)
+                                                       radioButtons("spp_comm", "Select species group", choices =c("All"="All", fl) ),
+                                                    selectInput("species", "Select species to examine", all_species$species),
                                                     )
                               ),
                               tags$div(id="cite",
@@ -97,11 +101,11 @@ ui <- navbarPage("Data Explorer", id="nav",
                     sidebarLayout(
                     sidebarPanel(
                       shinyWidgets::awesomeCheckboxGroup('data_collector', "Data Collector",
-                                                         choices = c("All",unique(project_status$data_collector)), 
+                                                         choices = c("All",unique(project_status$data_collector)),
                                                          selected = "All" ,inline = F
                       ),
                       shinyWidgets::awesomeCheckboxGroup('data_processor', "Data Processor",
-                                                         choices = c("All",unique(project_status$data_processor)), 
+                                                         choices = c("All",unique(project_status$data_processor)),
                                                          selected = "All" ,inline = F
                       ),
                       checkboxGroupInput('project_status', glue::glue("Project Status (as of {comple_date})"),
@@ -109,40 +113,45 @@ ui <- navbarPage("Data Explorer", id="nav",
                                          selected = unique(project_status$project_status))
                     ),
                     mainPanel(
-                      
-                      # checkboxGroupInput('exclude', "Select projects you wish to exclude", 
-                      #                    choices = unique(all_events$project),
-                      #                    selected = projects_to_exclude)
-                     
                       DT::dataTableOutput("projects")
                     )
            ) ),
            tabPanel("View and Download",
                     # App title ----
                     titlePanel("Download Data"),
-                    
+
                     # Sidebar layout with input and output definitions ----
                     sidebarLayout(
-                      
+
                       # Sidebar panel for inputs ----
                       sidebarPanel(
-                        
+
+                        # Show table, logical ----
+                        checkboxInput("showtable", "Show table?", FALSE),
+
+                        conditionalPanel(
+                          id = "showtable-control",condition = "input.showtable",
+                          numericInput('rowtable', "Number of rows to display",
+                                       value = 10)
+                        ),
+
                         # Input: Choose dataset ----
                         selectInput("dataset", "Choose a dataset:",
-                                    choices = c("locations", "pressure", "cars")),
-                        
+                                    choices = c("locations", "effort", "species_observations")),
+
                         # Button
                         downloadButton("downloadData", "Download")
-                        
+
                       ),
-                      
+
                       # Main panel for displaying outputs ----
                       mainPanel(
-                        
-                        tableOutput("table")
-                        
+                        conditionalPanel(
+                          id = "showtable-output",condition = "input.showtable",
+                        tableOutput("table") )
+
                       )
-                      
+
                     ) )
 )
 

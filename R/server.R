@@ -20,9 +20,9 @@ library(dplyr)
 
 
 # Define server to create map with options
-server <- function(input, output) {
+server <- function(input, output, session) {
   # Taken from https://github.com/rstudio/shiny-examples/blob/main/063-superzip-example/server.R#L14
-  
+
   #https://stackoverflow.com/questions/42159804/how-to-collapse-sidebarpanel-in-shiny-app
   # observeEvent(input$showMenu, {
   #   shinyjs::show(id = "controls")
@@ -36,21 +36,37 @@ server <- function(input, output) {
   # observe({
   #   toggle(id = "exclude", condition = input$showExclude)
   # })
-  
+
   # Create the map
   output$map <- renderLeaflet({
     leaflet() %>%
       # addTiles() %>%
-      addProviderTiles("Esri.WorldImagery", group = 'Imagery') %>% 
-      addProviderTiles(providers$Esri.WorldPhysical, group = "Physical") |> 
-      addProviderTiles(providers$OpenStreetMap, group = "Street") |> 
-      addProviderTiles(providers$OpenTopoMap, group = "Terrain") |> 
+      addProviderTiles("Esri.WorldImagery", group = 'Imagery') %>%
+      addProviderTiles(providers$Esri.WorldPhysical, group = "Physical") |>
+      addProviderTiles(providers$OpenStreetMap, group = "Street") |>
+      addProviderTiles(providers$OpenTopoMap, group = "Terrain") |>
       setView(lng = -85.67, lat = 50.36, zoom = 6)
   })
-  
-  
-  
-  
+
+  observe({
+    x <- input$spp_comm
+    if(x == "All"){
+      x <- all_species$species
+    } else{
+      x <- all_species |>
+        filter(TC == input$spp_comm) |>
+        pull(species)
+    }
+    # Can also set the label and select items
+    updateSelectInput(session,"species",# "Select species to examine",
+                      choices = x,
+                      selected = head(x, 1)
+    )
+
+
+  })
+
+
   # A reactive expression that returns the set of locations that are
   # in bounds right now
   obsInBounds <- reactive({
@@ -66,86 +82,91 @@ server <- function(input, output) {
              longitude >= lngRng[1] & longitude <= lngRng[2])
   })
 
-  
+
   doys <- reactive({
     lubridate::yday(input$daterange)
   })
-  
-  
+
+
   filtered_events <- reactive({
-    all_events |> 
+    all_events |>
       left_join(project_summary(),
-                by = join_by(project, source)) |> 
+                by = join_by(project, source)) |>
       filter(
-        !is.na(project_name) & 
+        !is.na(project_name) &
         !project %in% input$exclude &
           year>=input$years[1] &
           year <= input$years[2] &
           source %in% input$source &
           type %in% input$type &
-          doy>= doys()[1] & doy <= doys()[2] 
-          
+          doy>= doys()[1] & doy <= doys()[2]
+
       ) %>%{
       if(input$include_missing_times){
-        filter(.,(is.na(t2se)) | ((Time_period %in% input$time_period) & 
+        filter(.,(is.na(t2se)) | ((Time_period %in% input$time_period) &
                                     (
                (
                  Time_period %in% c("Dusk", "Night") |
-           (t2sr >= input$t2sr[1] & t2sr <= input$t2sr[2]) 
+           (t2sr >= input$t2sr[1] & t2sr <= input$t2sr[2])
            ) &
           (!Time_period %in% c("Dusk", "Night") |
              (t2ss >= input$t2ss[1] & t2ss <= input$t2ss[2]) ) )
         )
         )
-      } 
+      }
     else{
-      filter(., 
+      filter(.,
              ((Time_period %in% input$time_period)) & (
              (Time_period %in% c("Dusk", "Night") |
          (t2sr >= input$t2sr[1] & t2sr <= input$t2sr[2]) ) &
         (!Time_period %in% c("Dusk", "Night") |
            (t2ss >= input$t2ss[1] & t2ss <= input$t2ss[2]) ) )
       )
-      
+
     }
       }
   })
-  
-  
+
+
   count_obs <- reactive({
-    filtered_events() |> 
+    filtered_events() |>
       janitor::tabyl(Time_period)
       })
   output$n_events <- renderTable(count_obs())
-  
+
   output$event_summary <- renderPlot({
-    ggplot(filtered_events() |> 
+    ggplot(filtered_events() |>
              filter(!is.na(t2se))) +
       stat_summary_hex(aes(lubridate::ymd("2020-01-01") +doy, t2se, z=1),
         fun = 'sum') +
       facet_grid(year~Time_period) +
-      labs(x = "Date", y = "Time to sun event", fill = "Count") 
+      labs(x = "Date",
+           y = "Time to sun event",
+           fill = "Count") +
+      rcartocolor::scale_fill_carto_c() +
+      theme_minimal(base_size = 14,
+                    base_family = "Roboto Condensed")
   })
-    
-    
-  
+
+
+
   # Reactive to summarize by site based on settings
   sites_summarize <- reactive({
-     filtered_events() |> 
+     filtered_events() |>
       dplyr::count(location, source,
                    type, project,
                    longitude,
                    latitude, loc_id)
-    
-    
-    
+
+
+
   })
-  
+
   species_summary <- reactive({
     active_events <- pull(filtered_events(), event_id)
-    all_counts_core |> 
+    all_counts_core |>
       filter(event_id %in% active_events &
-               species_name_clean == input$species) |> 
+               species_name_clean == input$species) |>
       summarize(
         n_observations = n(),
         # p_obs = sum(!is.na(total_count))/n_observations,
@@ -157,8 +178,8 @@ server <- function(input, output) {
                      by = join_by(location))
   }
   )
-  
-  
+
+
   # Show a popup at the given location
   showPopup <- function(loc_id, lat, lng) {
     ll <- sites_summarize()
@@ -179,14 +200,14 @@ server <- function(input, output) {
     # content
     leafletProxy("map") %>% addPopups(lng, lat, content, layerId = loc_id)
   }
-  
-  
+
+
   # This observer is responsible for maintaining the circles and legend,
   # according to the variables the user has chosen to map to color and size.
   observe({
     # colorBy <- input$color
     # sizeBy <- input$size
-    
+
     # if (colorBy == "superzip") {
     #   # Color and palette are treated specially in the "superzip" case, because
     #   # the values are categorical instead of continuous.
@@ -203,7 +224,7 @@ server <- function(input, output) {
     # } else {
     #   radius <- zipdata[[sizeBy]] / max(zipdata[[sizeBy]]) * 30000
     # }
-    # 
+    #
     content <- function(d){as.character(tagList(
       tags$h4("Location:", (paste(d$location, sep = ", ") )),
       tags$h6("Source: ", paste(d$source, sep = ", ") ),
@@ -211,35 +232,35 @@ server <- function(input, output) {
       tags$h6("Type: ", paste(d$type, sep = ", ") ) ,
       tags$h6("N: ", paste(d$n, sep = ", ") ) ) ) }
     radius <- sites_summarize()$n / max(sites_summarize()$n) * 30000
-    
+
     colourData <- sites_summarize()$type
     pal <- colorFactor("viridis", colourData)
     add_clusters <- switch(isTRUE(input$cluster), markerClusterOptions(),NULL)
     leafletProxy("map") %>%
-      clearShapes() |> 
-      clearMarkerClusters() |> 
+      clearShapes() |>
+      clearMarkerClusters() |>
       clearMarkers() %>% {
       if(input$data_layer == "Species Observations") {
         {if(input$show_effort){
           addCircles(., ~longitude, ~latitude,
                    layerId=~loc_id,
                    data = obsInBounds(),color = 'grey',
-                   weight = case_when(input$map_zoom <=4 ~1, 
-                                      input$map_zoom ==5 ~2, 
-                                      input$map_zoom ==6 ~3, 
-                                      input$map_zoom ==7 ~5, 
-                                      input$map_zoom ==8 ~7, 
-                                      input$map_zoom ==9 ~9, 
+                   weight = case_when(input$map_zoom <=4 ~1,
+                                      input$map_zoom ==5 ~2,
+                                      input$map_zoom ==6 ~3,
+                                      input$map_zoom ==7 ~5,
+                                      input$map_zoom ==8 ~7,
+                                      input$map_zoom ==9 ~9,
                                       input$map_zoom >9 ~11),
-                   opacity = 1, fill = TRUE, fillOpacity = 1 ) } else{.} }|>  
+                   opacity = 1, fill = TRUE, fillOpacity = 1 ) } else{.} }|>
        addMarkers( ~longitude, ~latitude,data = species_summary(),
                    clusterOptions = add_clusters,
                    # radius=~n*input$base_point_size,
                    layerId=~loc_id
-                   # stroke=FALSE, #fillOpacity=0.4  
+                   # stroke=FALSE, #fillOpacity=0.4
                    # fillColor=pal(colourData)
-        ) } 
-         else{.} 
+        ) }
+         else{.}
         } %>%
     {
     if(input$data_layer == "Surveyed Locations"){
@@ -248,18 +269,18 @@ server <- function(input, output) {
                    layerId=~loc_id,
                    data =  sites_summarize(),
                    clusterOptions = add_clusters,
-                   stroke=FALSE, fillOpacity=0.4, 
+                   stroke=FALSE, fillOpacity=0.4,
                    fillColor=pal(colourData))
       } else{
       addCircles(., ~longitude, ~latitude,
                   radius=radius,
                   layerId=~loc_id,
                  data =  sites_summarize(),
-                 stroke=FALSE, fillOpacity=0.4, 
-                 fillColor=pal(colourData)) 
+                 stroke=FALSE, fillOpacity=0.4,
+                 fillColor=pal(colourData))
       }
-      } else{.} 
-      }  |> 
+      } else{.}
+      }  |>
       addLayersControl(position = 'bottomright',
         baseGroups = c( "Terrain",
                         "Imagery",
@@ -268,15 +289,15 @@ server <- function(input, output) {
                 # overlayGroups = c("Species List",#"Interpreted locations",
                 #                    "# Obs species"),
                 options = layersControlOptions(collapsed = FALSE)
-      ) |> 
+      ) |>
       addLegend("bottomleft", pal=pal, values=colourData, title="Data type",
                 layerId="colourLegend")
   })
-  
-  
-  project_summary <- 
+
+
+  project_summary <-
     reactive({
-      project_status |> 
+      project_status |>
         filter(project_status %in% input$project_status) %>%{
         if("All" %in% input$data_collector & (length(input$data_collector)==1)){
           .
@@ -290,30 +311,30 @@ server <- function(input, output) {
           } else{
             filter(., data_processor %in% input$data_processor)
           }
-        } 
-       
+        }
+
   })
-  
-  output$projects <- project_summary() |> 
-    dplyr::select(project_name, 
-                  data_collector, 
-                  data_processor, source, project_status) |> 
-    DT::datatable() |> 
+
+  output$projects <- project_summary() |>
+    dplyr::select(project_name,
+                  data_collector,
+                  data_processor, source, project_status) |>
+    DT::datatable() |>
     DT::renderDataTable()
 
-  counts_in_bounds <- 
+  counts_in_bounds <-
     reactive({
       active_events <- pull(filtered_events(), event_id)
-      all_counts_core |> 
+      all_counts_core |>
         filter(event_id %in% active_events &
-                 species_name_clean == input$species) |> 
+                 species_name_clean == input$species) |>
         left_join(x = obsInBounds(),
-                  by = join_by(location, collection, event_id)) |> 
+                  by = join_by(location, collection, event_id)) |>
         tidyr::replace_na(list(total_count= 0) )
     })
-  
+
   output$p_obs <- renderPlot({
-    counts_in_bounds() |> 
+    counts_in_bounds() |>
       ggplot(aes(lubridate::ymd("2020-01-01") + doy-1, t2se, z= total_count)) +
       stat_summary_hex(fun = function(x){
         if(length(x)==0) return(0)
@@ -321,31 +342,31 @@ server <- function(input, output) {
       }) +
       facet_wrap(~Time_period,
                  scales = 'free', ncol = 1) +
-      labs(x = "", y = "Time to sun event", 
+      labs(x = "", y = "Time to sun event",
            fill = "Proportion with Obs") +
       rcartocolor::scale_fill_carto_c() +
-      theme_minimal(base_size = 14, 
+      theme_minimal(base_size = 14,
                     base_family = "Roboto Condensed") +
       theme(legend.position = 'bottom')
   })
-  
-  
+
+
   output$hist <- renderPlot({
     # If no zipcodes are in view, don't plot
     if (nrow(obsInBounds()) == 0)
       return(NULL)
-    
-    ggplot(obsInBounds() |> 
+
+    ggplot(obsInBounds() |>
            left_join(species_summary(),
-                     by = join_by(project, location, 
+                     by = join_by(project, location,
                                   source, type, longitude,
-                                  latitude, loc_id)) |> 
+                                  latitude, loc_id)) |>
            tidyr::replace_na(list(max_total_count=0)),
            aes(max_total_count)) +
       geom_histogram(binwidth = 1) +
       theme_minimal()
      })
-  
+
   # When map is clicked, show a popup with city info
   observe({
     leafletProxy("map") %>% clearPopups()
@@ -357,4 +378,32 @@ server <- function(input, output) {
       showPopup(event$id, event$lat, event$lng)
     })
   })
+
+  datasetInput <- reactive({
+    switch(input$dataset,
+           "locations" = sites_summarize(),
+           "effort" = filtered_events(),
+           "species_observations" = species_summary())
+
+  })
+
+  # Table of selected dataset ----
+  output$table <- DT::renderDataTable({
+    datasetInput() |>
+    dplyr::slice_sample(n=input$rowtable) |>
+    DT::datatable()
+  })
+
+  # Downloadable csv of selected dataset ----
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, ".csv", sep = "")
+    },
+    content = function(file) {
+      readr::write_csv(datasetInput(), file)
+    }
+  )
+
+
+
 }
