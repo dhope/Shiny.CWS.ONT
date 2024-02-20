@@ -6,7 +6,8 @@ spp_list <- readr::read_csv("data/obba_significant_species_list.csv") |>
   janitor::clean_names()
 
 spp_core <- readr::read_csv("data/ECCC_Avian_Core_20230518.csv", col_types = readr::cols()) |>
-  dplyr::select(English_Name,TC=Technical_Committees, COSEWIC_Species, SARA_Species) |>
+  mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
+  dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
   mutate(TC_L = case_when(
     TC == "LA"~ "Landbirds",
     TC == "SH"~ "Shorebirds",
@@ -70,7 +71,7 @@ all_counts_core <- readr::read_rds("data/counts.rds") |>
 
 
 all_species <- tibble(species = (all_counts_core$species_name_clean |> factor() |>
-  forcats::fct_infreq() |> unique()) ) |>
+  forcats::fct_infreq() |> unique() |> sort()) ) |>
   mutate(English_Name = as.character(species)) |>
   left_join(spp_core,by = join_by(English_Name))
 

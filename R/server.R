@@ -5,20 +5,6 @@ library(leaflet)
 library(dplyr)
 
 
-
-
-
-
-# all_events <- dplyr::slice_sample(all_events, n=1000)
-# dplyr::select(-latitude, -longitude)
-
-
-
-
-
-
-
-
 # Define server to create map with options
 server <- function(input, output, session) {
   # Taken from https://github.com/rstudio/shiny-examples/blob/main/063-superzip-example/server.R#L14
@@ -40,7 +26,6 @@ server <- function(input, output, session) {
   # Create the map
   output$map <- renderLeaflet({
     leaflet() %>%
-      # addTiles() %>%
       addProviderTiles("Esri.WorldImagery", group = 'Imagery') %>%
       addProviderTiles(providers$Esri.WorldPhysical, group = "Physical") |>
       addProviderTiles(providers$OpenStreetMap, group = "Street") |>
@@ -77,7 +62,7 @@ server <- function(input, output, session) {
     lngRng <- range(bounds$east, bounds$west)
 
     filter(filtered_events(),
-           !project %in% input$exclude &
+           !project_name %in% excluded_projects() &
            latitude >= latRng[1] & latitude <= latRng[2] &
              longitude >= lngRng[1] & longitude <= lngRng[2])
   })
@@ -94,7 +79,7 @@ server <- function(input, output, session) {
                 by = join_by(project, source)) |>
       filter(
         !is.na(project_name) &
-        !project %in% input$exclude &
+        !project_name %in% excluded_projects() &
           year>=input$years[1] &
           year <= input$years[2] &
           source %in% input$source &
@@ -319,8 +304,14 @@ server <- function(input, output, session) {
     dplyr::select(project_name,
                   data_collector,
                   data_processor, source, project_status) |>
-    DT::datatable() |>
-    DT::renderDataTable()
+    # DT::datatable() |>
+    DT::renderDataTable(selection = list(target = 'row'))
+
+  excluded_projects <- reactive({
+    project_summary()$project_name[input$projects_rows_selected]
+  })
+
+  output$print_ex <- renderPrint(excluded_projects())
 
   counts_in_bounds <-
     reactive({
@@ -389,9 +380,8 @@ server <- function(input, output, session) {
 
   # Table of selected dataset ----
   output$table <- DT::renderDataTable({
-    datasetInput() |>
-    dplyr::slice_sample(n=input$rowtable) |>
-    DT::datatable()
+    dplyr::slice_sample(.data =  datasetInput(),
+                        n=input$rowtable)
   })
 
   # Downloadable csv of selected dataset ----

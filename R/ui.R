@@ -113,7 +113,10 @@ ui <- navbarPage("Data Explorer", id="nav",
                                          selected = unique(project_status$project_status))
                     ),
                     mainPanel(
-                      DT::dataTableOutput("projects")
+                      h1("Select projects to exclude"),
+                      DT::dataTableOutput("projects"),
+                      h2("Excluded projects:"),
+                      verbatimTextOutput('print_ex')
                     )
            ) ),
            tabPanel("View and Download",
@@ -148,7 +151,7 @@ ui <- navbarPage("Data Explorer", id="nav",
                       mainPanel(
                         conditionalPanel(
                           id = "showtable-output",condition = "input.showtable",
-                        tableOutput("table") )
+                          DT::dataTableOutput("table") )
 
                       )
 
