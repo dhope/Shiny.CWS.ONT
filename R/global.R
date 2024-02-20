@@ -86,12 +86,3 @@ all_time_periods <- all_time_periods[stringr::str_detect(all_time_periods,
                                                          "Missing", negate=T)]
 
 
-projects_to_exclude <-
-  c("Pilot Project for Standardized Processing and Validation of Nocturnal Wildlife Vocalizations in the Ring of Fire Region",
-    "Avichorus",
-    "Breeding Bird Survey Sound Analysis - Test 2020",
-    "Extraction of low-frequency species using visual scanning",
-    "Nocturnal Data from Between Two Rivers 2019",
-    "Western Chorus Frog Study CWS Ontario Region 2018"
-
-  )
