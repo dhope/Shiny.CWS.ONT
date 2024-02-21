@@ -48,12 +48,7 @@ all_events <- readr::read_rds("data/all_events.rds") |>
                    Time_period == "Dawn"~t2sr,
                    TRUE ~ pmin(abs(t2ss),
                                abs(t2sr))
-                   ) )# |>
-  # REDUCING SAMPLE FOR TESTING
-  # slice_sample(n=1000)
-# filter(all_events,!Time_period %in% c("Dusk", "Dawn") ) |>
-#   ggplot(aes(lubridate::hour(date_time), t2ss, colour = Time_period)) +
-#   geom_jitter(width = 0.2, height = 0, alpha = 0.4)
+                   ) )
 
 
 t2sr_range <- range(all_events$t2se[all_events$t2se==all_events$t2sr], na.rm=T)

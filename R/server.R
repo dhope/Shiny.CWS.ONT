@@ -151,13 +151,16 @@ server <- function(input, output, session) {
                species_name_clean == input$species) |>
       dplyr::summarize(
         n_observations = n(),
-        # p_obs = sum(!is.na(total_count))/n_observations,
         max_total_count = max(total_count, na.rm=T),
         sum_total_count = sum(total_count, na.rm=T),
         avg_total_count = mean(total_count, na.rm = T),
         .by = c(location, species_name_clean)
       ) |> dplyr::left_join(sites_summarize(),
-                     by = dplyr::join_by(location))
+                     by = dplyr::join_by(location)) %>%
+      { if(input$limit_count){
+      dplyr::filter(., max_total_count >= input$lower_count_limits &
+                      max_total_count <= input$upper_count_limits)
+      } else{.}}
   }
   )
 
@@ -172,14 +175,6 @@ server <- function(input, output, session) {
       tags$h6("Project: ", paste(selectedloc$project, sep = ", ") ),
       tags$h6("Type: ", paste(selectedloc$type, sep = ", ") ) ,
       tags$h6("N: ", paste(selectedloc$n, sep = ", ") ) ) )
-    #   tags$strong(HTML(sprintf("%s, %s %s",
-    #                            selectedloc$city.x, selectedloc$state.x, selectedloc$zipcode
-    #   ))), tags$br(),
-    #   sprintf("Median household income: %s", dollar(selectedloc$income * 1000)), tags$br(),
-    #   sprintf("Percent of adults with BA: %s%%", as.integer(selectedloc$college)), tags$br(),
-    #   sprintf("Adult population: %s", selectedloc$adultpop)
-    # ))
-    # content
     leafletProxy("map") %>% addPopups(lng, lat, content, layerId = loc_id)
   }
 
@@ -213,6 +208,20 @@ server <- function(input, output, session) {
       tags$h6("Project: ", paste(d$project, sep = ", ") ),
       tags$h6("Type: ", paste(d$type, sep = ", ") ) ,
       tags$h6("N: ", paste(d$n, sep = ", ") ) ) ) }
+
+    ### Create Label
+    lab_counts <- sprintf(
+      "<strong>Species:</strong> %s <br/>
+      <strong>Max total count:</strong> %s <br/>
+      <strong>Average total count:</strong> %s<br/>
+      <strong>Sum of total counts:</strong> %s<br/>
+      <strong>Number of observations:</strong> %s",
+      input$species,
+  species_summary()$max_total_count,
+  species_summary()$avg_total_count,
+  species_summary()$sum_total_count,
+  species_summary()$n_observations  ) %>% lapply(htmltools::HTML)
+
     radius <- sites_summarize()$n / max(sites_summarize()$n) * 30000
 
     colourData <- sites_summarize()$type
@@ -237,8 +246,7 @@ server <- function(input, output, session) {
                    opacity = 1, fill = TRUE, fillOpacity = 1 ) } else{.} }|>
        addMarkers( ~longitude, ~latitude,data = species_summary(),
                    clusterOptions = add_clusters,
-                   # radius=~n*input$base_point_size,
-                   layerId=~loc_id
+                   layerId=~loc_id,popup= lab_counts
                    # stroke=FALSE, #fillOpacity=0.4
                    # fillColor=pal(colourData)
         ) }
@@ -268,8 +276,6 @@ server <- function(input, output, session) {
                         "Imagery",
                         "Physical",
                         "Street" ),
-                # overlayGroups = c("Species List",#"Interpreted locations",
-                #                    "# Obs species"),
                 options = layersControlOptions(collapsed = FALSE)
       ) |>
       addLegend("bottomleft", pal=pal, values=colourData, title="Data type",
@@ -301,14 +307,17 @@ server <- function(input, output, session) {
     dplyr::select(project_name,
                   data_collector,
                   data_processor, source, project_status) |>
-    # DT::datatable() |>
     DT::renderDataTable(selection = list(target = 'row'))
 
   excluded_projects <- reactive({
     project_summary()$project_name[input$projects_rows_selected]
   })
 
-  output$print_ex <- renderPrint(excluded_projects())
+  output$print_ex <- renderPrint({
+    if(length(excluded_projects())==0) return("None")
+    excluded_projects()
+    }
+    )
 
   counts_in_bounds <-
     reactive({
@@ -322,6 +331,10 @@ server <- function(input, output, session) {
     })
 
   output$p_obs <- renderPlot({
+    # If no data are in view, don't plot
+    if (nrow(counts_in_bounds()) == 0)
+      return(NULL)
+
     counts_in_bounds() |>
       ggplot(aes(lubridate::ymd("2020-01-01") + doy-1, t2se, z= total_count)) +
       stat_summary_hex(fun = function(x){
@@ -340,7 +353,7 @@ server <- function(input, output, session) {
 
 
   output$hist <- renderPlot({
-    # If no zipcodes are in view, don't plot
+    # If no data are in view, don't plot
     if (nrow(obsInBounds()) == 0)
       return(NULL)
 

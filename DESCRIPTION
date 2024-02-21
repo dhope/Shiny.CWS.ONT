@@ -25,4 +25,5 @@ Imports:
     tidyr,
     lubridate,
     forcats,
-    pkgload
+    pkgload,
+    htmltools

@@ -4,6 +4,10 @@
 
 # Define UI for application that draws a histogram
 ui <- navbarPage("Data Explorer", id="nav",
+
+# Intial app setup --------------------------------------------------------
+
+
            tabPanel("Setup",
                     sidebarPanel(
                       inputPanel(
@@ -53,6 +57,10 @@ ui <- navbarPage("Data Explorer", id="nav",
                     )
 
            ),
+
+# Interactive map ---------------------------------------------------------
+
+
            tabPanel("Interactive map",
                     div(class="outer",
                               tags$head(
@@ -73,6 +81,7 @@ ui <- navbarPage("Data Explorer", id="nav",
                                             conditionalPanel(id = "spp-plots",
                                                              condition = "input.data_layer=='Species Observations'",
                                                              checkboxInput("show_effort", "Show effort?", FALSE),
+                                                             checkboxInput('limit_count', "Limit count?", FALSE ),
                                                              plotOutput("p_obs", height = 500),
                                                              plotOutput("hist", height = 200)
                                             )
@@ -90,6 +99,11 @@ ui <- navbarPage("Data Explorer", id="nav",
                                       conditionalPanel(id = "spp-control",condition = "input.data_layer=='Species Observations'",
                                                        radioButtons("spp_comm", "Select species group", choices =c("All"="All", fl) ),
                                                     selectInput("species", "Select species to examine", all_species$species),
+                                                    conditionalPanel(id="limit-count-panel",condition = "input.limit_count",
+                                                                     "Enter limits for counts:",
+                                                                     numericInput("lower_count_limits", "Lower limit", value = 1, min = 1, max = 1e6),
+                                                                     numericInput("upper_count_limits", "Upper limit", value = 10, min = 1, max = 1e6)
+                                                                                                                                          )
                                                     )
                               ),
                               tags$div(id="cite",
@@ -97,9 +111,16 @@ ui <- navbarPage("Data Explorer", id="nav",
                               )
                           )
                  ),
+
+# Project selection -------------------------------------------------------
+
+
            tabPanel("Project Selection",
                     sidebarLayout(
                     sidebarPanel(
+                      h1("Select groups here include"),
+                      "Selecting only 'All' will include all groups, however if
+                      any groups are selected, only those projects will be included",
                       shinyWidgets::awesomeCheckboxGroup('data_collector', "Data Collector",
                                                          choices = c("All",unique(project_status$data_collector)),
                                                          selected = "All" ,inline = F
@@ -113,23 +134,27 @@ ui <- navbarPage("Data Explorer", id="nav",
                                          selected = unique(project_status$project_status))
                     ),
                     mainPanel(
-                      h1("Select projects to exclude"),
+                      h1("Included projects are shown below"),
+                      h2("Select a row in the table to exclude"),
                       DT::dataTableOutput("projects"),
                       h2("Excluded projects:"),
                       verbatimTextOutput('print_ex')
                     )
            ) ),
+
+# Download data -----------------------------------------------------------
+
+
            tabPanel("View and Download",
-                    # App title ----
                     titlePanel("Download Data"),
 
-                    # Sidebar layout with input and output definitions ----
+                    ## Sidebar layout with input and output definitions ----
                     sidebarLayout(
 
-                      # Sidebar panel for inputs ----
+                      ## Sidebar panel for inputs ----
                       sidebarPanel(
 
-                        # Show table, logical ----
+                        ## Show table, logical ----
                         checkboxInput("showtable", "Show table?", FALSE),
 
                         conditionalPanel(
@@ -138,7 +163,7 @@ ui <- navbarPage("Data Explorer", id="nav",
                                        value = 10)
                         ),
 
-                        # Input: Choose dataset ----
+                        ## Input: Choose dataset ----
                         selectInput("dataset", "Choose a dataset:",
                                     choices = c("locations", "effort", "species_observations")),
 
@@ -147,7 +172,7 @@ ui <- navbarPage("Data Explorer", id="nav",
 
                       ),
 
-                      # Main panel for displaying outputs ----
+                      ## Main panel for displaying outputs ----
                       mainPanel(
                         conditionalPanel(
                           id = "showtable-output",condition = "input.showtable",
