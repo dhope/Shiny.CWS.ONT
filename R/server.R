@@ -16,11 +16,8 @@ server <- function(input, output, session) {
   observe({
     toggle(id = "controls", condition = input$showMenu)
   })
-  # observe({
-  #   toggle(id = "exclude", condition = input$showExclude)
-  # })
 
-  # Create the map
+  # Create the map ---------
   output$map <- renderLeaflet({
     leaflet() %>%
       addProviderTiles("Esri.WorldImagery", group = 'Imagery') %>%
@@ -30,6 +27,8 @@ server <- function(input, output, session) {
       setView(lng = -85.67, lat = 50.36, zoom = 6)
   })
 
+
+  # Observation and Rective functions ----------------------
   observe({
     x <- input$spp_comm
     if(x == "All"){
@@ -69,7 +68,7 @@ server <- function(input, output, session) {
     lubridate::yday(input$daterange)
   })
 
-
+  ## Filter events data frame -----------------------------
   filtered_events <- reactive({
     all_events |>
       dplyr::left_join(project_summary(),
@@ -110,12 +109,88 @@ server <- function(input, output, session) {
   })
 
 
+  ## Reactive to summarize by site based on settings ------------
+  sites_summarize <- reactive({
+    filtered_events() |>
+      dplyr::count(loc_id,longitude,
+                   latitude,
+                   source,
+                   type,
+                   project,
+                   location
+      )
+
+
+
+  })
+
+  ## Species summary -----------------
+  species_summary <- reactive({
+    active_events <- pull(filtered_events(), event_id)
+    all_counts_core |>
+      dplyr::filter(event_id %in% active_events &
+                      species_name_clean == input$species) |>
+      dplyr::summarize(
+        n_observations = n(),
+        max_total_count = max(total_count, na.rm=T),
+        sum_total_count = sum(total_count, na.rm=T),
+        avg_total_count = mean(total_count, na.rm = T),
+        .by = c(location, species_name_clean)
+      ) |> dplyr::left_join(sites_summarize(),
+                            by = dplyr::join_by(location)) %>%
+      { if(input$limit_count){
+        dplyr::filter(., max_total_count >= input$lower_count_limits &
+                        max_total_count <= input$upper_count_limits)
+      } else{.}}
+  }
+  )
+
+  ## Project summary --------------
+  project_summary <-
+    reactive({
+      project_status |>
+        dplyr::filter(project_status %in% input$project_status) %>%{
+          if("All" %in% input$data_collector & (length(input$data_collector)==1)){
+            .
+          } else{
+            dplyr::filter(., data_collector %in% input$data_collector)
+          }
+        } %>%
+        {
+          if("All" %in% input$data_processor & (length(input$data_processor)==1)){
+            .
+          } else{
+            dplyr::filter(., data_processor %in% input$data_processor)
+          }
+        }
+
+    })
+
+
+  ## Table by time period -----
+  # Generate table count of observations by time period
   count_obs <- reactive({
     filtered_events() |>
       janitor::tabyl(Time_period)
       })
   output$n_events <- renderTable(count_obs())
 
+  ## Counts in bounds -------------
+  counts_in_bounds <-
+    reactive({
+      active_events <- pull(filtered_events(), event_id)
+      all_counts_core |>
+        dplyr::filter(event_id %in% active_events &
+                        species_name_clean == input$species) |>
+        dplyr::left_join(x = obsInBounds(),
+                         by = dplyr::join_by(location, collection, event_id)) |>
+        tidyr::replace_na(list(total_count= 0) )
+    })
+
+
+  # Plots ----------------
+
+  ## Event summary plot -----------
   output$event_summary <- renderPlot({
     ggplot(filtered_events() |>
              dplyr::filter(!is.na(t2se))) +
@@ -130,42 +205,49 @@ server <- function(input, output, session) {
                     base_family = "Roboto Condensed")
   })
 
+  output$p_obs <- renderPlot({
+    # If no data are in view, don't plot
+    if (nrow(counts_in_bounds()) == 0)
+      return(NULL)
 
-
-  # Reactive to summarize by site based on settings
-  sites_summarize <- reactive({
-     filtered_events() |>
-      dplyr::count(location, source,
-                   type, project,
-                   longitude,
-                   latitude, loc_id)
-
-
-
+    counts_in_bounds() |>
+      ggplot(aes(lubridate::ymd("2020-01-01") + doy-1, t2se, z= total_count)) +
+      stat_summary_hex(fun = function(x){
+        if(length(x)==0) return(0)
+        (sum(x>0)/length(x))
+      }) +
+      facet_wrap(~Time_period,
+                 scales = 'free', ncol = 1) +
+      labs(x = "", y = "Time to sun event",
+           fill = "Proportion with Obs") +
+      rcartocolor::scale_fill_carto_c() +
+      theme_minimal(base_size = 14,
+                    base_family = "Roboto Condensed") +
+      theme(legend.position = 'bottom')
   })
 
-  species_summary <- reactive({
-    active_events <- pull(filtered_events(), event_id)
-    all_counts_core |>
-      dplyr::filter(event_id %in% active_events &
-               species_name_clean == input$species) |>
-      dplyr::summarize(
-        n_observations = n(),
-        max_total_count = max(total_count, na.rm=T),
-        sum_total_count = sum(total_count, na.rm=T),
-        avg_total_count = mean(total_count, na.rm = T),
-        .by = c(location, species_name_clean)
-      ) |> dplyr::left_join(sites_summarize(),
-                     by = dplyr::join_by(location)) %>%
-      { if(input$limit_count){
-      dplyr::filter(., max_total_count >= input$lower_count_limits &
-                      max_total_count <= input$upper_count_limits)
-      } else{.}}
-  }
-  )
+
+  output$hist <- renderPlot({
+    # If no data are in view, don't plot
+    if (nrow(obsInBounds()) == 0)
+      return(NULL)
+
+    ggplot(obsInBounds() |>
+             dplyr::left_join(species_summary(),
+                              by = dplyr::join_by(project, location,
+                                                  source, type, longitude,
+                                                  latitude, loc_id)) |>
+             tidyr::replace_na(list(max_total_count=0)),
+           aes(max_total_count)) +
+      geom_histogram(binwidth = 1) +
+      theme_minimal()
+  })
 
 
-  # Show a popup at the given location
+
+# Populate the map ------------------
+
+  ## Show a popup at the given location ---
   showPopup <- function(loc_id, lat, lng) {
     ll <- sites_summarize()
     selectedloc <- ll[ll$loc_id == loc_id,]
@@ -178,7 +260,7 @@ server <- function(input, output, session) {
     leafletProxy("map") %>% addPopups(lng, lat, content, layerId = loc_id)
   }
 
-
+  ## Add markers -------
   # This observer is responsible for maintaining the circles and legend,
   # according to the variables the user has chosen to map to color and size.
   observe({
@@ -217,10 +299,11 @@ server <- function(input, output, session) {
       <strong>Sum of total counts:</strong> %s<br/>
       <strong>Number of observations:</strong> %s",
       input$species,
-  species_summary()$max_total_count,
-  species_summary()$avg_total_count,
-  species_summary()$sum_total_count,
-  species_summary()$n_observations  ) %>% lapply(htmltools::HTML)
+      species_summary()$max_total_count,
+      species_summary()$avg_total_count,
+      species_summary()$sum_total_count,
+      species_summary()$n_observations  ) %>%
+      lapply(htmltools::HTML)
 
     radius <- sites_summarize()$n / max(sites_summarize()$n) * 30000
 
@@ -282,27 +365,20 @@ server <- function(input, output, session) {
                 layerId="colourLegend")
   })
 
+  ## Map click ----------
+  # When map is clicked, show a popup with city info
+  observe({
+    leafletProxy("map") %>% clearPopups()
+    event <- input$map_shape_click
+    if (is.null(event))
+      return()
 
-  project_summary <-
-    reactive({
-      project_status |>
-        dplyr::filter(project_status %in% input$project_status) %>%{
-        if("All" %in% input$data_collector & (length(input$data_collector)==1)){
-          .
-        } else{
-          dplyr::filter(., data_collector %in% input$data_collector)
-        }
-      } %>%
-        {
-          if("All" %in% input$data_processor & (length(input$data_processor)==1)){
-            .
-          } else{
-            dplyr::filter(., data_processor %in% input$data_processor)
-          }
-        }
-
+    isolate({
+      showPopup(event$id, event$lat, event$lng)
+    })
   })
 
+  # Project table -----
   output$projects <- project_summary() |>
     dplyr::select(project_name,
                   data_collector,
@@ -319,67 +395,12 @@ server <- function(input, output, session) {
     }
     )
 
-  counts_in_bounds <-
-    reactive({
-      active_events <- pull(filtered_events(), event_id)
-      all_counts_core |>
-        dplyr::filter(event_id %in% active_events &
-                 species_name_clean == input$species) |>
-        dplyr::left_join(x = obsInBounds(),
-                  by = dplyr::join_by(location, collection, event_id)) |>
-        tidyr::replace_na(list(total_count= 0) )
-    })
-
-  output$p_obs <- renderPlot({
-    # If no data are in view, don't plot
-    if (nrow(counts_in_bounds()) == 0)
-      return(NULL)
-
-    counts_in_bounds() |>
-      ggplot(aes(lubridate::ymd("2020-01-01") + doy-1, t2se, z= total_count)) +
-      stat_summary_hex(fun = function(x){
-        if(length(x)==0) return(0)
-        (sum(x>0)/length(x))
-      }) +
-      facet_wrap(~Time_period,
-                 scales = 'free', ncol = 1) +
-      labs(x = "", y = "Time to sun event",
-           fill = "Proportion with Obs") +
-      rcartocolor::scale_fill_carto_c() +
-      theme_minimal(base_size = 14,
-                    base_family = "Roboto Condensed") +
-      theme(legend.position = 'bottom')
-  })
 
 
-  output$hist <- renderPlot({
-    # If no data are in view, don't plot
-    if (nrow(obsInBounds()) == 0)
-      return(NULL)
 
-    ggplot(obsInBounds() |>
-           dplyr::left_join(species_summary(),
-                     by = dplyr::join_by(project, location,
-                                  source, type, longitude,
-                                  latitude, loc_id)) |>
-           tidyr::replace_na(list(max_total_count=0)),
-           aes(max_total_count)) +
-      geom_histogram(binwidth = 1) +
-      theme_minimal()
-     })
 
-  # When map is clicked, show a popup with city info
-  observe({
-    leafletProxy("map") %>% clearPopups()
-    event <- input$map_shape_click
-    if (is.null(event))
-      return()
 
-    isolate({
-      showPopup(event$id, event$lat, event$lng)
-    })
-  })
-
+# Download datasets ---------------
   datasetInput <- reactive({
     switch(input$dataset,
            "locations" = sites_summarize(),
@@ -388,13 +409,13 @@ server <- function(input, output, session) {
 
   })
 
-  # Table of selected dataset ----
+  ## Table of selected dataset ----
   output$table <- DT::renderDataTable({
     dplyr::slice_sample(.data =  datasetInput(),
                         n=input$rowtable)
   })
 
-  # Downloadable csv of selected dataset ----
+  ## Downloadable csv of selected dataset ----
   output$downloadData <- downloadHandler(
     filename = function() {
       paste(input$dataset, ".csv", sep = "")

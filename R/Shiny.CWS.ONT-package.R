@@ -7,6 +7,5 @@
 #' @name Shiny.CWS.ONT-package
 #'
 #' @import shiny
-#' @import shinyjs
 #' @import leaflet
 NULL
