@@ -2,11 +2,10 @@
 % Please edit documentation in R/Shiny.CWS.ONT-package.R
 \docType{package}
 \name{Shiny.CWS.ONT-package}
+\alias{Shiny.CWS.ONT}
 \alias{Shiny.CWS.ONT-package}
-\title{Shiny.CWS.ONT: Shiny app to explore CWS Ontario Bird Data}
+\title{\pkg{Shiny.CWS.ONT} R package (CWS Ontario Data graphical user interface)}
 \description{
-What the package does (one paragraph).
-
 What the package does (one paragraph).
 }
 \author{

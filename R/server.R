@@ -14,7 +14,7 @@ server <- function(input, output, session) {
   #   shinyjs::hide(id = "controls")
   # })
   observe({
-    toggle(id = "controls", condition = input$showMenu)
+    shinyjs::toggle(id = "controls", condition = input$showMenu)
   })
 
   # Create the map ---------

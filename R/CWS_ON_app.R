@@ -2,7 +2,7 @@
 #'
 #' @param ...
 #'
-#' @return Runs app
+#' @return Retuns shiny app
 #' @export
 #'
 CWS_ON_app <- function(...){
@@ -13,7 +13,7 @@ CWS_ON_app <- function(...){
 #'
 #' @param ...
 #'
-#' @return
+#' @return Runs app
 #' @export
 run_shiny_app <- function(...){
   runApp(CWS_ON_app(),...)

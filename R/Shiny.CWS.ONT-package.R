@@ -1,6 +1,3 @@
-#' @keywords internal
-"_PACKAGE"
-
 #' \pkg{Shiny.CWS.ONT} R package (CWS Ontario Data graphical user interface)
 #'
 #' @docType package
@@ -8,4 +5,7 @@
 #'
 #' @import shiny
 #' @import leaflet
-NULL
+#' @keywords internal
+"_PACKAGE"
+
+
