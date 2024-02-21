@@ -1,7 +1,4 @@
-library(shiny)
-library(shinyjs)
 library(sf)
-library(leaflet)
 library(dplyr)
 
 
@@ -39,7 +36,7 @@ server <- function(input, output, session) {
       x <- all_species$species
     } else{
       x <- all_species |>
-        filter(TC == input$spp_comm) |>
+        dplyr::filter(TC == input$spp_comm) |>
         pull(species)
     }
     # Can also set the label and select items
@@ -61,7 +58,7 @@ server <- function(input, output, session) {
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
 
-    filter(filtered_events(),
+    dplyr::filter(filtered_events(),
            !project_name %in% excluded_projects() &
            latitude >= latRng[1] & latitude <= latRng[2] &
              longitude >= lngRng[1] & longitude <= lngRng[2])
@@ -75,9 +72,9 @@ server <- function(input, output, session) {
 
   filtered_events <- reactive({
     all_events |>
-      left_join(project_summary(),
-                by = join_by(project, source)) |>
-      filter(
+      dplyr::left_join(project_summary(),
+                by = dplyr::join_by(project, source)) |>
+      dplyr::filter(
         !is.na(project_name) &
         !project_name %in% excluded_projects() &
           year>=input$years[1] &
@@ -88,7 +85,7 @@ server <- function(input, output, session) {
 
       ) %>%{
       if(input$include_missing_times){
-        filter(.,(is.na(t2se)) | ((Time_period %in% input$time_period) &
+        dplyr::filter(.,(is.na(t2se)) | ((Time_period %in% input$time_period) &
                                     (
                (
                  Time_period %in% c("Dusk", "Night") |
@@ -100,7 +97,7 @@ server <- function(input, output, session) {
         )
       }
     else{
-      filter(.,
+      dplyr::filter(.,
              ((Time_period %in% input$time_period)) & (
              (Time_period %in% c("Dusk", "Night") |
          (t2sr >= input$t2sr[1] & t2sr <= input$t2sr[2]) ) &
@@ -121,7 +118,7 @@ server <- function(input, output, session) {
 
   output$event_summary <- renderPlot({
     ggplot(filtered_events() |>
-             filter(!is.na(t2se))) +
+             dplyr::filter(!is.na(t2se))) +
       stat_summary_hex(aes(lubridate::ymd("2020-01-01") +doy, t2se, z=1),
         fun = 'sum') +
       facet_grid(year~Time_period) +
@@ -150,17 +147,17 @@ server <- function(input, output, session) {
   species_summary <- reactive({
     active_events <- pull(filtered_events(), event_id)
     all_counts_core |>
-      filter(event_id %in% active_events &
+      dplyr::filter(event_id %in% active_events &
                species_name_clean == input$species) |>
-      summarize(
+      dplyr::summarize(
         n_observations = n(),
         # p_obs = sum(!is.na(total_count))/n_observations,
         max_total_count = max(total_count, na.rm=T),
         sum_total_count = sum(total_count, na.rm=T),
         avg_total_count = mean(total_count, na.rm = T),
         .by = c(location, species_name_clean)
-      ) |> left_join(sites_summarize(),
-                     by = join_by(location))
+      ) |> dplyr::left_join(sites_summarize(),
+                     by = dplyr::join_by(location))
   }
   )
 
@@ -283,18 +280,18 @@ server <- function(input, output, session) {
   project_summary <-
     reactive({
       project_status |>
-        filter(project_status %in% input$project_status) %>%{
+        dplyr::filter(project_status %in% input$project_status) %>%{
         if("All" %in% input$data_collector & (length(input$data_collector)==1)){
           .
         } else{
-          filter(., data_collector %in% input$data_collector)
+          dplyr::filter(., data_collector %in% input$data_collector)
         }
       } %>%
         {
           if("All" %in% input$data_processor & (length(input$data_processor)==1)){
             .
           } else{
-            filter(., data_processor %in% input$data_processor)
+            dplyr::filter(., data_processor %in% input$data_processor)
           }
         }
 
@@ -317,10 +314,10 @@ server <- function(input, output, session) {
     reactive({
       active_events <- pull(filtered_events(), event_id)
       all_counts_core |>
-        filter(event_id %in% active_events &
+        dplyr::filter(event_id %in% active_events &
                  species_name_clean == input$species) |>
-        left_join(x = obsInBounds(),
-                  by = join_by(location, collection, event_id)) |>
+        dplyr::left_join(x = obsInBounds(),
+                  by = dplyr::join_by(location, collection, event_id)) |>
         tidyr::replace_na(list(total_count= 0) )
     })
 
@@ -348,8 +345,8 @@ server <- function(input, output, session) {
       return(NULL)
 
     ggplot(obsInBounds() |>
-           left_join(species_summary(),
-                     by = join_by(project, location,
+           dplyr::left_join(species_summary(),
+                     by = dplyr::join_by(project, location,
                                   source, type, longitude,
                                   latitude, loc_id)) |>
            tidyr::replace_na(list(max_total_count=0)),

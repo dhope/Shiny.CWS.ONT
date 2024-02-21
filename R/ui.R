@@ -1,5 +1,5 @@
-library(leaflet)
-library(shinyjs)
+# library(leaflet)
+# library(shinyjs)
 
 
 # Define UI for application that draws a histogram
@@ -58,7 +58,7 @@ ui <- navbarPage("Data Explorer", id="nav",
                               tags$head(
                               #   # Include our custom CSS
                                 includeCSS("styles.css"),
-                                useShinyjs()
+                                shinyjs::useShinyjs()
                               #   includeScript("gomap.js")
                               ),
                               # If not using custom CSS, set height of leafletOutput to a number instead of percent

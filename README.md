@@ -1,0 +1,36 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# Shiny.CWS.ONT
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of Shiny.CWS.ONT is to allow users to explore data collected by
+CWS-Ontario and our partners
+
+## Installation
+
+You can install the development version of Shiny.CWS.ONT from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("remotes")
+remotes::install_github("dhope/Shiny.CWS.ONT")
+```
+
+## Example
+
+Load the app using:
+
+``` r
+library(Shiny.CWS.ONT)
+run_shiny_app()
+```
+
+Alternatively, download the entire package then open in Rstudio and run:
+
+``` r
+pkgload::load_all()
+CWS_ON_app()
+```
