@@ -27,3 +27,5 @@ Imports:
     forcats,
     pkgload,
     htmltools
+Suggests: 
+    hexbin

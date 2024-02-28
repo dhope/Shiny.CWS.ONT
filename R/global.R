@@ -1,14 +1,14 @@
-library(dplyr)
-library(ggplot2)
-library(sf)
+# library(dplyr)
+# library(ggplot2)
+# library(sf)
 
 spp_list <- readr::read_csv("data/obba_significant_species_list.csv") |>
   janitor::clean_names()
 
 spp_core <- readr::read_csv("data/ECCC_Avian_Core_20230518.csv", col_types = readr::cols()) |>
-  mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
+  dplyr::mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
   dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
-  mutate(TC_L = case_when(
+  dplyr::mutate(TC_L = case_when(
     TC == "LA"~ "Landbirds",
     TC == "SH"~ "Shorebirds",
     TC == "WB" ~ "Waterbirds",
@@ -27,7 +27,7 @@ comple_date <- file.info("data/project_status.rds")$ctime |> lubridate::as_date(
 # All locations and events
 all_events <- readr::read_rds("data/all_events.rds") |>
   filter(type!="Summary") |>
-  mutate(
+  dplyr::mutate(
     type = case_when(
       type != "ARU recording"~type,
       project %in% project_status$project[project_status$data_processor=="CWS-ON-PS"]~"Visual scanning",
@@ -67,7 +67,7 @@ all_counts_core <- readr::read_rds("data/counts.rds") |>
 
 all_species <- tibble(species = (all_counts_core$species_name_clean |> factor() |>
   forcats::fct_infreq() |> unique() |> sort()) ) |>
-  mutate(English_Name = as.character(species)) |>
+  dplyr::mutate(English_Name = as.character(species)) |>
   left_join(spp_core,by = join_by(English_Name))
 
 f <- spp_core |> filter(English_Name %in% all_species$species) |>

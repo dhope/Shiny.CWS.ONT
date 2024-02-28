@@ -5,6 +5,9 @@
 #'
 #' @import shiny
 #' @import leaflet
+#' @import ggplot2
+#' @import dplyr
+#' @import sf
 #' @keywords internal
 "_PACKAGE"
 
