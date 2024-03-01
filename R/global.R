@@ -23,10 +23,13 @@ project_status <- readr::read_rds( "data/project_status.rds")
 comple_date <- file.info("data/project_status.rds")$ctime |> lubridate::as_date()
 
 data_boreal_2016 <- readr::read_rds("data/Boreal2016_data_summary.rds")
+data_boreal_2012 <- readr::read_rds("data/Boreal_Burns_ARU_2012_data_summary.rds")
 
 # All locations and events
 all_events <- readr::read_rds("data/all_events.rds") |>
-  dplyr::bind_rows(data_boreal_2016$events) |>
+  dplyr::bind_rows(list(
+    data_boreal_2016$events,
+    data_boreal_2012$events)) |>
   filter(type!="Summary") |>
   dplyr::mutate(
     type = case_when(
@@ -57,7 +60,8 @@ t2ss_range <- range(all_events$t2se[all_events$t2se==all_events$t2ss], na.rm=T)
 
 
 all_counts_core <- readr::read_rds("data/counts.rds") |>
-  bind_rows(data_boreal_2016$counts) |>
+  bind_rows(list(data_boreal_2016$counts,
+                 data_boreal_2012$counts) ) |>
   filter(event_id %in% all_events$event_id &
            stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
            species_name_clean %in% spp_list$english_name) |>  #TODO maybe allow these to be added later
