@@ -46,7 +46,7 @@ all_events <- readr::read_rds("data/all_events.rds") |>
   t2ss <= -60 & t2sr>220 ~ "Day" ,
   t2ss > 150 | t2sr < -70 ~ "Night",
   # t2sr > -70 & t2sr < -60 ~ "Pre-dawn",
-  is.na(t2sr) ~ "Missing time data",
+  is.na(t2sr) ~ "Missing time or location data",
   TRUE~"Unk") ,
   t2se = case_when(Time_period=="Dusk"~t2ss,
                    Time_period == "Dawn"~t2sr,

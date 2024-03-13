@@ -192,6 +192,10 @@ server <- function(input, output, session) {
 
   ## Event summary plot -----------
   output$event_summary <- renderPlot({
+
+    if (nrow(filtered_events()) == 0)
+      return(NULL)
+
     ggplot(filtered_events() |>
              dplyr::filter(!is.na(t2se))) +
       stat_summary_hex(aes(lubridate::ymd("2020-01-01") +doy, t2se, z=1),
@@ -308,8 +312,26 @@ server <- function(input, output, session) {
     radius <- sites_summarize()$n / max(sites_summarize()$n) * 30000
 
     colourData <- sites_summarize()$type
+    colourDataspp <- species_summary()$type
     pal <- colorFactor("viridis", colourData)
-    add_clusters <- switch(isTRUE(input$cluster), markerClusterOptions(),NULL)
+    add_clusters <- switch(isTRUE(input$cluster), markerClusterOptions(
+      # Leaving this here in case I want to customize cluster colours at some point
+        #     iconCreateFunction=JS("function (cluster) {
+  #   var childCount = cluster.getChildCount();
+  #   var c = ' marker-cluster-';
+  #   if (childCount < 100) {
+  #     c += 'large';
+  #   } else if (childCount < 1000) {
+  #     c += 'medium';
+  #   } else {
+  #     c += 'small';
+  #   }
+  #   return new L.DivIcon({ html: '<div><span>' + childCount + '</span></div>', className: 'marker-cluster' + c, iconSize: new L.Point(40, 40) });
+  #
+  # }")
+
+    ),NULL)
+
     leafletProxy("map") %>%
       clearShapes() |>
       clearMarkerClusters() |>
@@ -327,11 +349,28 @@ server <- function(input, output, session) {
                                       input$map_zoom ==9 ~9,
                                       input$map_zoom >9 ~11),
                    opacity = 1, fill = TRUE, fillOpacity = 1 ) } else{.} }|>
-       addMarkers( ~longitude, ~latitude,data = species_summary(),
-                   clusterOptions = add_clusters,
-                   layerId=~loc_id,popup= lab_counts
-                   # stroke=FALSE, #fillOpacity=0.4
-                   # fillColor=pal(colourData)
+          addCircleMarkers( ~longitude, ~latitude,
+                           data = species_summary(),
+                           clusterOptions = add_clusters,
+                           layerId=~loc_id,popup= lab_counts,
+                           # stroke=FALSE, fillOpacity=1,
+                           color=pal(colourDataspp),
+                           fill = F
+
+          # addAwesomeMarkers( ~longitude, ~latitude,data = species_summary(),
+          #                    clusterOptions = add_clusters,
+          #                    layerId=~loc_id,popup= lab_counts,
+          #                    icon = awesomeIcons(
+          #                      icon = 'ios-close',
+          #                      iconColor = 'black',
+          #                      library = 'ion',
+          #                      markerColor = pal(colourDataspp)
+          #                    )
+       # addMarkers( ~longitude, ~latitude,data = species_summary(),
+       #             clusterOptions = add_clusters,
+       #             layerId=~loc_id,popup= lab_counts,
+       #             # stroke=FALSE, #fillOpacity=0.4
+       #             color=pal(colourData)
         ) }
          else{.}
         } %>%
@@ -354,15 +393,16 @@ server <- function(input, output, session) {
       }
       } else{.}
       }  |>
+      addScaleBar("bottomright",options = scaleBarOptions()) |>
+      addLegend("bottomright", pal=pal, values=colourData, title="Data type",
+                layerId="colourLegend")|>
       addLayersControl(position = 'bottomright',
         baseGroups = c( "Terrain",
                         "Imagery",
                         "Physical",
                         "Street" ),
                 options = layersControlOptions(collapsed = FALSE)
-      ) |>
-      addLegend("bottomleft", pal=pal, values=colourData, title="Data type",
-                layerId="colourLegend")
+      )
   })
 
   ## Map click ----------
