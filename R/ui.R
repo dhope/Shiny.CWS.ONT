@@ -94,10 +94,14 @@ ui <- navbarPage("Data Explorer", id="nav",
                                       width = 330, height = "auto",
                                         selectInput("base_point_size", "Adjust point size",choices = list("Small"=.1, "Medium"=1, "Large"=2 ),
                                                     selected = 1),#min = .1, max = 500, step =50, value = 100),
-                                      radioButtons("data_layer", "Data layer", choices = c("None", "Surveyed Locations", "Species Observations"),
+                                      radioButtons("data_layer", "Data layer", choices = c("None", "Surveyed Locations", "Species Observations", "Community Builder"),
                                                    selected = "None"),
-                                      conditionalPanel(id = "spp-control",condition = "input.data_layer=='Species Observations'",
+                        conditionalPanel(id = "spp-control",condition = "input.data_layer=='Species Observations'||input.data_layer=='Community Builder'",
                                                        radioButtons("spp_comm", "Select species group", choices =c("All"="All", fl) ),
+                                                       conditionalPanel(condition = "input.data_layer=='Community Builder'",
+                                                                        selectInput("species_comm", "Select species to examine.
+                                                                To type, click on selected species and hit <backspace>.", all_species$species, multiple = TRUE)),
+                                                       conditionalPanel(condition = "input.data_layer=='Species Observations'",
                                                     selectInput("species", "Select species to examine.
                                                                 To type, click on selected species and hit <backspace>.", all_species$species),
                                                     conditionalPanel(id="limit-count-panel",condition = "input.limit_count",
@@ -105,6 +109,7 @@ ui <- navbarPage("Data Explorer", id="nav",
                                                                      numericInput("lower_count_limits", "Lower limit", value = 1, min = 1, max = 1e6),
                                                                      numericInput("upper_count_limits", "Upper limit", value = 10, min = 1, max = 1e6)
                                                                                                                                           )
+                                                       )
                                                     )
                               ),
                               tags$div(id="cite",
