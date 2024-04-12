@@ -127,8 +127,11 @@ server <- function(input, output, session) {
   ## Species summary -----------------
   species_summary <- reactive({
     active_events <- pull(filtered_events(), event_id)
-    all_counts_core |>
-      dplyr::filter(event_id %in% active_events &
+    all_counts_core %>% {
+
+      if(input$data_layer=='Species Observations'){
+
+      dplyr::filter(.,event_id %in% active_events &
                       species_name_clean == input$species) |>
       dplyr::summarize(
         n_observations = n(),
@@ -136,14 +139,30 @@ server <- function(input, output, session) {
         sum_total_count = sum(total_count, na.rm=T),
         avg_total_count = mean(total_count, na.rm = T),
         .by = c(location, species_name_clean)
-      ) |> dplyr::left_join(sites_summarize(),
-                            by = dplyr::join_by(location)) %>%
+      )  %>%
       { if(input$limit_count){
         dplyr::filter(., max_total_count >= input$lower_count_limits &
                         max_total_count <= input$upper_count_limits)
       } else{.}}
+      } else{# if(input$data_layer=='Community Builder') {
+        dplyr::filter(.,event_id %in% active_events &
+                 species_common_name %in% input$species_comm) |>
+          dplyr::summarise(n_spp = n_distinct(species_common_name),
+                    n_observations = n(),
+                    species_name_clean = glue::glue_collapse(input$species_comm, sep = ", "),
+                    max_total_count = max(total_count, na.rm=T),
+                    sum_total_count = sum(total_count, na.rm=T),
+                    avg_total_count = mean(total_count, na.rm = T),
+                    .by = location) |>
+          dplyr::filter(n_spp == length(input$species_comm))
+    }
+    } |> dplyr::left_join(sites_summarize(),
+                          by = dplyr::join_by(location))
   }
   )
+
+
+
 
   ## Project summary --------------
   project_summary <-
@@ -302,7 +321,7 @@ server <- function(input, output, session) {
       <strong>Average total count:</strong> %s<br/>
       <strong>Sum of total counts:</strong> %s<br/>
       <strong>Number of observations:</strong> %s",
-      input$species,
+      species_summary()$species_name_clean,
       species_summary()$max_total_count,
       species_summary()$avg_total_count,
       species_summary()$sum_total_count,
@@ -336,7 +355,7 @@ server <- function(input, output, session) {
       clearShapes() |>
       clearMarkerClusters() |>
       clearMarkers() %>% {
-      if(input$data_layer == "Species Observations") {
+      if(input$data_layer == "Species Observations" || input$data_layer == "Community Builder") {
         {if(input$show_effort){
           addCircles(., ~longitude, ~latitude,
                    layerId=~loc_id,
