@@ -28,7 +28,7 @@ server <- function(input, output, session) {
   })
 
 
-  # Observation and Rective functions ----------------------
+  # Observation and Reactive functions ----------------------
   observe({
     x <- input$spp_comm
     if(x == "All"){
@@ -40,6 +40,10 @@ server <- function(input, output, session) {
     }
     # Can also set the label and select items
     updateSelectInput(session,"species",# "Select species to examine",
+                      choices = x,
+                      selected = head(x, 1)
+    )
+    updateSelectInput(session,"species_comm",# "Select species to examine",
                       choices = x,
                       selected = head(x, 1)
     )
