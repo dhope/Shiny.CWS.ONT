@@ -20,7 +20,7 @@ spp_core <- readr::read_csv("data/ECCC_Avian_Core_20230518.csv", col_types = rea
   ) )
 
 project_status <- readr::read_rds( "data/project_status.rds")
-comple_date <- file.info("data/project_status.rds")$ctime |> lubridate::as_date()
+comple_date <- file.info("data/project_status.rds")$mtime |> lubridate::as_date()
 
 data_boreal_2016 <- readr::read_rds("data/Boreal2016_data_summary.rds")
 data_boreal_2012 <- readr::read_rds("data/Boreal_Burns_ARU_2012_data_summary.rds")

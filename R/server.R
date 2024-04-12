@@ -44,8 +44,7 @@ server <- function(input, output, session) {
                       selected = head(x, 1)
     )
     updateSelectInput(session,"species_comm",# "Select species to examine",
-                      choices = x,
-                      selected = head(x, 1)
+                      choices = x
     )
 
 
