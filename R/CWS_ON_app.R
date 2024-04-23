@@ -6,7 +6,7 @@
 #' @export
 #'
 CWS_ON_app <- function(...){
-  shinyApp(ui, server, ...)
+  shinyApp(ui_fun(), server, ...)
 }
 
 #' Run the shiny app

@@ -2,3 +2,5 @@
 ^CWS_ONT_Data_Explore\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
+data-large/
+inst/R_dev/
