@@ -27,14 +27,48 @@ server <- function(input, output, session) {
       setView(lng = -85.67, lat = 50.36, zoom = 6)
   })
 
+  ## Project summary --------------
+  project_summary <-
+    reactive({
+      .cws_env$project_status |>
+        dplyr::filter(project_status %in% input$project_status) %>%{
+          if("All" %in% input$data_collector & (length(input$data_collector)==1)){
+            .
+          } else{
+            dplyr::filter(., data_collector %in% input$data_collector)
+          }
+        } %>%
+        {
+          if("All" %in% input$data_processor & (length(input$data_processor)==1)){
+            .
+          } else{
+            dplyr::filter(., data_processor %in% input$data_processor)
+          }
+        }
+
+    })
+
+  # Project table -----
+  output$projects <- project_summary() |>
+    dplyr::select(project_name,
+                  data_collector,
+                  data_processor, source, project_status) |>
+    DT::renderDataTable(selection = list(target = 'row'))
+
+  excluded_projects <- reactive({
+    project_summary()$project_name[input$projects_rows_selected]
+  })
+
+
+
 
   # Observation and Reactive functions ----------------------
   observe({
     x <- input$spp_comm
     if(x == "All"){
-      x <- all_species$species
+      x <- .cws_env$all_species$species
     } else{
-      x <- all_species |>
+      x <- .cws_env$all_species |>
         dplyr::filter(TC == input$spp_comm) |>
         pull(species)
     }
@@ -73,18 +107,17 @@ server <- function(input, output, session) {
 
   ## Filter events data frame -----------------------------
   filtered_events <- reactive({
-    all_events |>
+    .cws_env$all_events |>
       dplyr::left_join(project_summary(),
                 by = dplyr::join_by(project, source)) |>
       dplyr::filter(
         !is.na(project_name) &
-        !project_name %in% excluded_projects() &
+        !project_name %in% excluded_projects()  &
           year>=input$years[1] &
           year <= input$years[2] &
           source %in% input$source &
           type %in% input$type &
           doy>= doys()[1] & doy <= doys()[2]
-
       ) %>%{
       if(input$include_missing_times){
         dplyr::filter(.,(is.na(t2se)) | ((Time_period %in% input$time_period) &
@@ -130,15 +163,25 @@ server <- function(input, output, session) {
   ## Species summary -----------------
   species_summary <- reactive({
     active_events <- pull(filtered_events(), event_id)
-    all_counts_core %>% {
+    .cws_env$all_counts_core %>% {
 
       if(input$data_layer=='Species Observations'){
 
       dplyr::filter(.,event_id %in% active_events &
-                      species_name_clean == input$species) |>
+                      species_name_clean == input$species) %>%
+          {
+            if( ('Naturecounts' %in% input$source) & (length(input$source)==1)){
+              dplyr::filter(., category %in% input$breeding)
+            } else{.}
+          } |>
+          # left_join(active_events() |>
+          #             dplyr::select(event_id, doy) |>
+          #             .by = dplyr::join_by(event_id)
+          #             )
       dplyr::summarize(
         n_observations = n(),
         max_total_count = max(total_count, na.rm=T),
+        # range_dates = diff(range(doy)),
         sum_total_count = sum(total_count, na.rm=T),
         avg_total_count = mean(total_count, na.rm = T),
         .by = c(location, species_name_clean)
@@ -167,26 +210,6 @@ server <- function(input, output, session) {
 
 
 
-  ## Project summary --------------
-  project_summary <-
-    reactive({
-      project_status |>
-        dplyr::filter(project_status %in% input$project_status) %>%{
-          if("All" %in% input$data_collector & (length(input$data_collector)==1)){
-            .
-          } else{
-            dplyr::filter(., data_collector %in% input$data_collector)
-          }
-        } %>%
-        {
-          if("All" %in% input$data_processor & (length(input$data_processor)==1)){
-            .
-          } else{
-            dplyr::filter(., data_processor %in% input$data_processor)
-          }
-        }
-
-    })
 
 
   ## Table by time period -----
@@ -201,7 +224,7 @@ server <- function(input, output, session) {
   counts_in_bounds <-
     reactive({
       active_events <- pull(filtered_events(), event_id)
-      all_counts_core |>
+      .cws_env$all_counts_core |>
         dplyr::filter(event_id %in% active_events &
                         species_name_clean == input$species) |>
         dplyr::left_join(x = obsInBounds(),
@@ -440,16 +463,7 @@ server <- function(input, output, session) {
     })
   })
 
-  # Project table -----
-  output$projects <- project_summary() |>
-    dplyr::select(project_name,
-                  data_collector,
-                  data_processor, source, project_status) |>
-    DT::renderDataTable(selection = list(target = 'row'))
 
-  excluded_projects <- reactive({
-    project_summary()$project_name[input$projects_rows_selected]
-  })
 
   output$print_ex <- renderPrint({
     if(length(excluded_projects())==0) return("None")

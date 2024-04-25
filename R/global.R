@@ -2,88 +2,88 @@
 # library(ggplot2)
 # library(sf)
 
-spp_list <- readr::read_csv("data/obba_significant_species_list.csv") |>
-  janitor::clean_names()
+# spp_list <- readr::read_csv("data/obba_significant_species_list.csv") |>
+#   janitor::clean_names()
+#
+# spp_core <- readr::read_csv("data/ECCC_Avian_Core_20230518.csv", col_types = readr::cols()) |>
+#   dplyr::mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
+#   dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
+#   dplyr::mutate(TC_L = case_when(
+#     TC == "LA"~ "Landbirds",
+#     TC == "SH"~ "Shorebirds",
+#     TC == "WB" ~ "Waterbirds",
+#     TC == "WB-InMa" ~ "Waterbirds - Inland",
+#     TC == "WB-Sea" ~ "Seabirds",
+#     TC == "WF" ~ "Waterfowl",
+#     TRUE ~ "Non-migratory"
+#
+#   ) )
 
-spp_core <- readr::read_csv("data/ECCC_Avian_Core_20230518.csv", col_types = readr::cols()) |>
-  dplyr::mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
-  dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
-  dplyr::mutate(TC_L = case_when(
-    TC == "LA"~ "Landbirds",
-    TC == "SH"~ "Shorebirds",
-    TC == "WB" ~ "Waterbirds",
-    TC == "WB-InMa" ~ "Waterbirds - Inland",
-    TC == "WB-Sea" ~ "Seabirds",
-    TC == "WF" ~ "Waterfowl",
-    TRUE ~ "Non-migratory"
+# project_status <- readr::read_rds( "data/project_status.rds")
+# comple_date <- file.info("data/project_status.rds")$mtime |> lubridate::as_date()
 
-  ) )
-
-project_status <- readr::read_rds( "data/project_status.rds")
-comple_date <- file.info("data/project_status.rds")$mtime |> lubridate::as_date()
-
-data_boreal_2016 <- readr::read_rds("data/Boreal2016_data_summary.rds")
-data_boreal_2012 <- readr::read_rds("data/Boreal_Burns_ARU_2012_data_summary.rds")
-
-# All locations and events
-all_events <- readr::read_rds("data/all_events.rds") |>
-  dplyr::bind_rows(list(
-    data_boreal_2016$events,
-    data_boreal_2012$events)) |>
-  filter(type!="Summary") |>
-  dplyr::mutate(
-    type = case_when(
-      type != "ARU recording"~type,
-      project %in% project_status$project[project_status$data_processor=="CWS-ON-PS"]~"Visual scanning",
-      TRUE ~ type
-    ),
-    loc_id = as.numeric(as.factor((paste0(location,source,
-                                               type, project,
-                                               longitude, latitude)))),
-         Time_period =case_when(
-  t2ss >= -60 & t2ss <= 150~"Dusk",
-  t2sr >= -70 & t2sr <= 220 ~"Dawn",
-  t2ss <= -60 & t2sr>220 ~ "Day" ,
-  t2ss > 150 | t2sr < -70 ~ "Night",
-  # t2sr > -70 & t2sr < -60 ~ "Pre-dawn",
-  is.na(t2sr) ~ "Missing time or location data",
-  TRUE~"Unk") ,
-  t2se = case_when(Time_period=="Dusk"~t2ss,
-                   Time_period == "Dawn"~t2sr,
-                   TRUE ~ pmin(abs(t2ss),
-                               abs(t2sr))
-                   ) )
-
-
-t2sr_range <- range(all_events$t2se[all_events$t2se==all_events$t2sr], na.rm=T)
-t2ss_range <- range(all_events$t2se[all_events$t2se==all_events$t2ss], na.rm=T)
+# data_boreal_2016 <- readr::read_rds("data/Boreal2016_data_summary.rds")
+# data_boreal_2012 <- readr::read_rds("data/Boreal_Burns_ARU_2012_data_summary.rds")
+#
+# # All locations and events
+# all_events <- readr::read_rds("data/all_events.rds") |>
+#   dplyr::bind_rows(list(
+#     data_boreal_2016$events,
+#     data_boreal_2012$events)) |>
+#   dplyr::filter(type!="Summary") |>
+#   dplyr::mutate(
+#     type = case_when(
+#       type != "ARU recording"~type,
+#       project %in% project_status$project[project_status$data_processor=="CWS-ON-PS"]~"Visual scanning",
+#       TRUE ~ type
+#     ),
+#     loc_id = as.numeric(as.factor((paste0(location,source,
+#                                                type, project,
+#                                                longitude, latitude)))),
+#          Time_period =case_when(
+#   t2ss >= -60 & t2ss <= 150~"Dusk",
+#   t2sr >= -70 & t2sr <= 220 ~"Dawn",
+#   t2ss <= -60 & t2sr>220 ~ "Day" ,
+#   t2ss > 150 | t2sr < -70 ~ "Night",
+#   # t2sr > -70 & t2sr < -60 ~ "Pre-dawn",
+#   is.na(t2sr) ~ "Missing time or location data",
+#   TRUE~"Unk") ,
+#   t2se = case_when(Time_period=="Dusk"~t2ss,
+#                    Time_period == "Dawn"~t2sr,
+#                    TRUE ~ pmin(abs(t2ss),
+#                                abs(t2sr))
+#                    ) )
 
 
-all_counts_core <- readr::read_rds("data/counts.rds") |>
-  bind_rows(list(data_boreal_2016$counts,
-                 data_boreal_2012$counts) ) |>
-  filter(event_id %in% all_events$event_id &
-           stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
-           species_name_clean %in% spp_list$english_name) |>  #TODO maybe allow these to be added later
-  left_join(spp_core, by = join_by(species_name_clean == English_Name))
+# t2sr_range <- range(all_events$t2se[all_events$t2se==all_events$t2sr], na.rm=T)
+# t2ss_range <- range(all_events$t2se[all_events$t2se==all_events$t2ss], na.rm=T)
 
 
-rm(data_boreal_2016)
+# all_counts_core <- readr::read_rds("data/counts.rds") |>
+#   bind_rows(list(data_boreal_2016$counts,
+#                  data_boreal_2012$counts) ) |>
+#   dplyr::filter(event_id %in% all_events$event_id &
+#            stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
+#            species_name_clean %in% .cws_env$spp_list$english_name) |>  #TODO maybe allow these to be added later
+#   left_join(.cws_env$spp_core, by = join_by(species_name_clean == English_Name))
 
 
-all_species <- tibble(species = (all_counts_core$species_name_clean |> factor() |>
-  forcats::fct_infreq() |> unique() |> sort()) ) |>
-  dplyr::mutate(English_Name = as.character(species)) |>
-  left_join(spp_core,by = join_by(English_Name))
-
-f <- spp_core |> filter(English_Name %in% all_species$species) |>
-  dplyr::distinct(TC, TC_L)
-fl <- f$TC
-names(fl) <- f$TC_L
+# rm(data_boreal_2016)
 
 
-all_time_periods <- unique(all_events$Time_period)
-all_time_periods <- all_time_periods[stringr::str_detect(all_time_periods,
-                                                         "Missing", negate=T)]
+# all_species <- tibble(species = (all_counts_core$species_name_clean |> factor() |>
+#   forcats::fct_infreq() |> unique() |> sort()) ) |>
+#   dplyr::mutate(English_Name = as.character(species)) |>
+#   left_join(.cws_env$spp_core,by = join_by(English_Name))
+
+# f <- .cws_env$spp_core |> dplyr::filter(English_Name %in% all_species$species) |>
+#   dplyr::distinct(TC, TC_L)
+# fl <- f$TC
+# names(fl) <- f$TC_L
+
+
+# all_time_periods <- unique(all_events$Time_period)
+# all_time_periods <- all_time_periods[stringr::str_detect(all_time_periods,
+#                                                          "Missing", negate=T)]
 
 

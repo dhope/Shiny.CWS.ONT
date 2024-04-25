@@ -1,30 +1,32 @@
 # library(leaflet)
 # library(shinyjs)
-
+get_env_ob <- function(object){
+  .cws_env[[object]]
+}
 
 # Define UI for application that draws a histogram
-ui <- navbarPage("Data Explorer", id="nav",
+ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
 
 # Intial app setup --------------------------------------------------------
-
+          # print(search()),
 
            tabPanel("Setup",
                     sidebarPanel(
                       inputPanel(
                                shinyWidgets::awesomeCheckboxGroup('source', "Data source",
-                                                          choices = unique(all_events$source),
-                                                          selected = unique(all_events$source),
+                                                          choices = unique(get_env_ob("all_events")$source),
+                                                          selected = unique(get_env_ob("all_events")$source),
                                                           inline = T
                                             ),
                        shinyWidgets::awesomeCheckboxGroup('type', "Data type",
-                                                          choices = unique(all_events$type),
+                                                          choices = unique(get_env_ob("all_events")$type),
                                                           selected = c("ARU recording",
                                                                        "Checklist",
                                                                        "Point Count"),inline = T
                        ),
                        sliderInput('years', "Years included", value = c(2021, 2023),
-                                   min = min(all_events$year, na.rm = T),
-                                   max =max(all_events$year, na.rm = T), sep = ""),
+                                   min = min(get_env_ob("all_events")$year, na.rm = T),
+                                   max =max(get_env_ob("all_events")$year, na.rm = T), sep = ""),
                        dateRangeInput('daterange',"Range of dates (ignore year)",
                                       start = "2024-05-01", end = "2024-07-10",
                                       min = "2024-01-01", max = "2024-12-31",
@@ -32,13 +34,13 @@ ui <- navbarPage("Data Explorer", id="nav",
                        ) ,
                        shinyWidgets::awesomeCheckboxGroup("time_period",
                                                           "Time period",
-                                                          choices =all_time_periods,
+                                                          choices =get_env_ob("all_time_periods"),
                                                           selected = "Dawn", inline = T), # Leaving this out for now, but may want to limit later on
                        # conditionalPanel()
                        sliderInput("t2sr", "Time to sunrise (minutes)",
                                    value = c(-30, 120),
-                                   min = ceiling(t2sr_range[[1]]),
-                                   max = ceiling(t2sr_range[[2]]),
+                                   min = ceiling(get_env_ob("t2sr_range")[[1]]),
+                                   max = ceiling(get_env_ob("t2sr_range")[[2]]),
                                    step = 5),
                        checkboxInput("include_missing_times",
                                      "Include data with missing times?",
@@ -46,8 +48,8 @@ ui <- navbarPage("Data Explorer", id="nav",
                        conditionalPanel("input.time_period.includes('Dusk')||input.time_period.includes('Night')",
                                         sliderInput("t2ss", "Time to sunset (minutes)",
                                                     value = c(-30, 120),
-                                                    min = ceiling(t2ss_range[[1]]),
-                                                    max = ceiling(t2ss_range[[2]])
+                                                    min = ceiling(get_env_ob("t2ss_range")[[1]]),
+                                                    max = ceiling(get_env_ob("t2ss_range")[[2]])
                                                     ,
                                                     step = 5))),
                       tableOutput("n_events")
@@ -97,13 +99,20 @@ ui <- navbarPage("Data Explorer", id="nav",
                                       radioButtons("data_layer", "Data layer", choices = c("None", "Surveyed Locations", "Species Observations", "Community Builder"),
                                                    selected = "None"),
                         conditionalPanel(id = "spp-control",condition = "input.data_layer=='Species Observations'||input.data_layer=='Community Builder'",
-                                                       radioButtons("spp_comm", "Select species group", choices =c("All"="All", fl) ),
+                                                       radioButtons("spp_comm", "Select species group", choices =c("All"="All", .cws_env$fl) ),
                                                        conditionalPanel(condition = "input.data_layer=='Community Builder'",
                                                                         selectInput("species_comm", "Select species to examine.
-                                                                To type, click on selected species and hit <backspace>.", all_species$species, multiple = TRUE)),
+                                                                To type, click on selected species and hit <backspace>.", .cws_env$all_species$species, multiple = TRUE)),
                                                        conditionalPanel(condition = "input.data_layer=='Species Observations'",
+                                                                        conditionalPanel(condition = "input.source == 'Naturecounts'",
+                                                                                         selectInput('breeding', "Select breeding category",
+                                                                                                     choices = .cws_env$bird_codes,
+                                                                                                     selected = .cws_env$bird_codes,
+                                                                                                     multiple = T
+                                                                                                     )
+                                                                                         ),
                                                     selectInput("species", "Select species to examine.
-                                                                To type, click on selected species and hit <backspace>.", all_species$species),
+                                                                To type, click on selected species and hit <backspace>.", .cws_env$all_species$species),
                                                     conditionalPanel(id="limit-count-panel",condition = "input.limit_count",
                                                                      "Enter limits for counts:",
                                                                      numericInput("lower_count_limits", "Lower limit", value = 1, min = 1, max = 1e6),
@@ -128,16 +137,16 @@ ui <- navbarPage("Data Explorer", id="nav",
                       "Selecting only 'All' will include all groups, however if
                       any groups are selected, only those projects will be included",
                       shinyWidgets::awesomeCheckboxGroup('data_collector', "Data Collector",
-                                                         choices = c("All",unique(project_status$data_collector)),
+                                                         choices = c("All",unique(.cws_env$project_status$data_collector)),
                                                          selected = "All" ,inline = F
                       ),
                       shinyWidgets::awesomeCheckboxGroup('data_processor', "Data Processor",
-                                                         choices = c("All",unique(project_status$data_processor)),
+                                                         choices = c("All",unique(.cws_env$project_status$data_processor)),
                                                          selected = "All" ,inline = F
                       ),
-                      checkboxGroupInput('project_status', glue::glue("Project Status (as of {comple_date})"),
-                                         choices = unique(project_status$project_status),
-                                         selected = unique(project_status$project_status))
+                      checkboxGroupInput('project_status', glue::glue("Project Status (as of {.cws_env$comple_date})"),
+                                         choices = unique(.cws_env$project_status$project_status),
+                                         selected = unique(.cws_env$project_status$project_status))
                     ),
                     mainPanel(
                       h1("Included projects are shown below"),
@@ -188,6 +197,7 @@ ui <- navbarPage("Data Explorer", id="nav",
 
                     ) )
 )
+}
 
 
 
