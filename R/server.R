@@ -112,12 +112,12 @@ server <- function(input, output, session) {
                 by = dplyr::join_by(project, source)) |>
       dplyr::filter(
         !is.na(project_name) &
-        !project_name %in% excluded_projects() # &
-          # year>=input$years[1] &
-          # year <= input$years[2] &
-          # source %in% input$source &
-          # type %in% input$type &
-          # doy>= doys()[1] & doy <= doys()[2]
+        !project_name %in% excluded_projects()  &
+          year>=input$years[1] &
+          year <= input$years[2] &
+          source %in% input$source &
+          type %in% input$type &
+          doy>= doys()[1] & doy <= doys()[2]
       ) %>%{
       if(input$include_missing_times){
         dplyr::filter(.,(is.na(t2se)) | ((Time_period %in% input$time_period) &

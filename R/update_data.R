@@ -77,13 +77,17 @@ update_data <- function(spp_list_csv=NULL,
                                   TRUE ~ pmin(abs(t2ss),
                                               abs(t2sr))
           ) )
+      rlang::inform("all_events updated:")
+      glimpse(.cws_env$all_events)
     }
   if(!is.null(all_counts_rds)){
     .cws_env$all_counts_core <- readr::read_rds(all_counts_rds) |>
-      dplyr::filter(event_id %in% .cws_env$all_events_example$event_id &
+      dplyr::filter(event_id %in% .cws_env$all_events$event_id &
                       stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
                       species_name_clean %in% .cws_env$spp_list$english_name) |>  #TODO maybe allow these to be added later
       dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == English_Name))
+    rlang::inform("all_counts_core updated:")
+    glimpse(.cws_env$all_counts_core)
 }
 
     ## Update calculated values
@@ -97,6 +101,7 @@ update_data <- function(spp_list_csv=NULL,
                                                 forcats::fct_infreq() |> unique() |> sort()) ) |>
       dplyr::mutate(English_Name = as.character(species)) |>
       left_join(.cws_env$spp_core,by = join_by(English_Name))
+    # print(.cws_env$all_species)
     .cws_env$all_time_periods <- unique(.cws_env$all_events$Time_period)
     .cws_env$all_time_periods <- .cws_env$all_time_periods[stringr::str_detect(.cws_env$all_time_periods,
                                                                                "Missing", negate=T)]

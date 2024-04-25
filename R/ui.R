@@ -1,6 +1,8 @@
 # library(leaflet)
 # library(shinyjs)
-
+get_env_ob <- function(object){
+  .cws_env[[object]]
+}
 
 # Define UI for application that draws a histogram
 ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
@@ -12,19 +14,19 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                     sidebarPanel(
                       inputPanel(
                                shinyWidgets::awesomeCheckboxGroup('source', "Data source",
-                                                          choices = unique(.cws_env$all_events$source),
-                                                          selected = unique(.cws_env$all_events$source),
+                                                          choices = unique(get_env_ob("all_events")$source),
+                                                          selected = unique(get_env_ob("all_events")$source),
                                                           inline = T
                                             ),
                        shinyWidgets::awesomeCheckboxGroup('type', "Data type",
-                                                          choices = unique(.cws_env$all_events$type),
+                                                          choices = unique(get_env_ob("all_events")$type),
                                                           selected = c("ARU recording",
                                                                        "Checklist",
                                                                        "Point Count"),inline = T
                        ),
                        sliderInput('years', "Years included", value = c(2021, 2023),
-                                   min = min(.cws_env$all_events$year, na.rm = T),
-                                   max =max(.cws_env$all_events$year, na.rm = T), sep = ""),
+                                   min = min(get_env_ob("all_events")$year, na.rm = T),
+                                   max =max(get_env_ob("all_events")$year, na.rm = T), sep = ""),
                        dateRangeInput('daterange',"Range of dates (ignore year)",
                                       start = "2024-05-01", end = "2024-07-10",
                                       min = "2024-01-01", max = "2024-12-31",
@@ -32,13 +34,13 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                        ) ,
                        shinyWidgets::awesomeCheckboxGroup("time_period",
                                                           "Time period",
-                                                          choices =.cws_env$all_time_periods,
+                                                          choices =get_env_ob("all_time_periods"),
                                                           selected = "Dawn", inline = T), # Leaving this out for now, but may want to limit later on
                        # conditionalPanel()
                        sliderInput("t2sr", "Time to sunrise (minutes)",
                                    value = c(-30, 120),
-                                   min = ceiling(.cws_env$t2sr_range[[1]]),
-                                   max = ceiling(.cws_env$t2sr_range[[2]]),
+                                   min = ceiling(get_env_ob("t2sr_range")[[1]]),
+                                   max = ceiling(get_env_ob("t2sr_range")[[2]]),
                                    step = 5),
                        checkboxInput("include_missing_times",
                                      "Include data with missing times?",
@@ -46,8 +48,8 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                        conditionalPanel("input.time_period.includes('Dusk')||input.time_period.includes('Night')",
                                         sliderInput("t2ss", "Time to sunset (minutes)",
                                                     value = c(-30, 120),
-                                                    min = ceiling(.cws_env$t2ss_range[[1]]),
-                                                    max = ceiling(.cws_env$t2ss_range[[2]])
+                                                    min = ceiling(get_env_ob("t2ss_range")[[1]]),
+                                                    max = ceiling(get_env_ob("t2ss_range")[[2]])
                                                     ,
                                                     step = 5))),
                       tableOutput("n_events")
