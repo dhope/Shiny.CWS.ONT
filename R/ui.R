@@ -104,6 +104,13 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                                                                         selectInput("species_comm", "Select species to examine.
                                                                 To type, click on selected species and hit <backspace>.", .cws_env$all_species$species, multiple = TRUE)),
                                                        conditionalPanel(condition = "input.data_layer=='Species Observations'",
+                                                                        conditionalPanel(condition = "input.source == 'Naturecounts'",
+                                                                                         selectInput('breeding', "Select breeding category",
+                                                                                                     choices = .cws_env$bird_codes,
+                                                                                                     selected = .cws_env$bird_codes,
+                                                                                                     multiple = T
+                                                                                                     )
+                                                                                         ),
                                                     selectInput("species", "Select species to examine.
                                                                 To type, click on selected species and hit <backspace>.", .cws_env$all_species$species),
                                                     conditionalPanel(id="limit-count-panel",condition = "input.limit_count",

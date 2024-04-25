@@ -168,10 +168,20 @@ server <- function(input, output, session) {
       if(input$data_layer=='Species Observations'){
 
       dplyr::filter(.,event_id %in% active_events &
-                      species_name_clean == input$species) |>
+                      species_name_clean == input$species) %>%
+          {
+            if( ('Naturecounts' %in% input$source) & (length(input$source)==1)){
+              dplyr::filter(., category %in% input$breeding)
+            } else{.}
+          } |>
+          # left_join(active_events() |>
+          #             dplyr::select(event_id, doy) |>
+          #             .by = dplyr::join_by(event_id)
+          #             )
       dplyr::summarize(
         n_observations = n(),
         max_total_count = max(total_count, na.rm=T),
+        # range_dates = diff(range(doy)),
         sum_total_count = sum(total_count, na.rm=T),
         avg_total_count = mean(total_count, na.rm = T),
         .by = c(location, species_name_clean)

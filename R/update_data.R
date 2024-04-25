@@ -85,7 +85,10 @@ update_data <- function(spp_list_csv=NULL,
       dplyr::filter(event_id %in% .cws_env$all_events$event_id &
                       stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
                       species_name_clean %in% .cws_env$spp_list$english_name) |>  #TODO maybe allow these to be added later
-      dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == English_Name))
+      dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == English_Name)) |>
+      dplyr::left_join(naturecounts::meta_breeding_codes(),
+                       by= dplyr::join_by(BreedingBirdAtlasCode==breeding_code )) |>
+      dplyr::mutate( category =tidyr::replace_na(category,"None"))
     rlang::inform("all_counts_core updated:")
     glimpse(.cws_env$all_counts_core)
 }
