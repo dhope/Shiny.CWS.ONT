@@ -2,6 +2,7 @@
 
 export(CWS_ON_app)
 export(run_shiny_app)
+export(update_data)
 import(dplyr)
 import(ggplot2)
 import(leaflet)
