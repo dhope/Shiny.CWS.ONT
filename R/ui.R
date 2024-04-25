@@ -67,7 +67,8 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                     div(class="outer",
                               tags$head(
                               #   # Include our custom CSS
-                                includeCSS("styles.css"),
+                                includeCSS(system.file("extdata","styles.css",
+                                                       package = 'Shiny.CWS.ONT')),
                                 shinyjs::useShinyjs()
                               #   includeScript("gomap.js")
                               ),
