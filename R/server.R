@@ -223,8 +223,6 @@ server <- function(input, output, session) {
   ## Counts in bounds -------------
   counts_in_bounds <-
     reactive({
-      glimpse(obsInBounds())
-      glimpse(.cws_env$all_counts_core)
       active_events <- pull(filtered_events(), event_id)
       .cws_env$all_counts_core |>
         dplyr::filter(event_id %in% active_events &
