@@ -223,12 +223,15 @@ server <- function(input, output, session) {
   ## Counts in bounds -------------
   counts_in_bounds <-
     reactive({
+      glimpse(obsInBounds())
+      glimpse(.cws_env$all_counts_core)
       active_events <- pull(filtered_events(), event_id)
       .cws_env$all_counts_core |>
         dplyr::filter(event_id %in% active_events &
                         species_name_clean == input$species) |>
         dplyr::left_join(x = obsInBounds(),
-                         by = dplyr::join_by(location, collection, event_id)) |>
+                         by = dplyr::join_by(location,  event_id)
+                         ) |>
         tidyr::replace_na(list(total_count= 0) )
     })
 

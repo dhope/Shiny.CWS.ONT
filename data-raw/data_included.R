@@ -1,3 +1,5 @@
+
+
 data_boreal_2016 <- readr::read_rds("data-large//Boreal2016_data_summary.rds")
 data_boreal_2012 <- readr::read_rds("data-large//Boreal_Burns_ARU_2012_data_summary.rds")
 
@@ -57,7 +59,7 @@ withr::with_seed(42,{
 # readr::write_rds(all_events_example, "inst/extdata/data/all_events_example.rds")
 
 
-all_counts_core_example <- readr::read_rds("data-large//counts.rds") |>
+all_counts_core_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scratchpad/SHINY_DATA_SHARE/data-large//counts.rds") |>
   dplyr::bind_rows(list(data_boreal_2016$counts,
                  data_boreal_2012$counts) ) |>
   dplyr::filter(event_id %in% all_events_example$event_id &
@@ -71,7 +73,7 @@ all_counts_core_example <- readr::read_rds("data-large//counts.rds") |>
 
 
 
-locations_example <- readr::read_rds("data-large/locations.rds") |>
+locations_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scratchpad/SHINY_DATA_SHARE/data-large/locations.rds") |>
   filter(location %in% all_events_example$location)
 
 
