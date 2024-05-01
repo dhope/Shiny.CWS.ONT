@@ -5,14 +5,18 @@
 \title{Update data in shiny app}
 \usage{
 update_data(
+  base_folder_path = NULL,
   spp_list_csv = NULL,
   spp_core_csv = NULL,
   project_status_rds = NULL,
   all_events_rds = NULL,
-  all_counts_rds = NULL
+  all_counts_rds = NULL,
+  locations_rds = NULL
 )
 }
 \arguments{
+\item{base_folder_path}{path to location of files}
+
 \item{all_counts_rds}{}
 }
 \description{

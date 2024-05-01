@@ -421,6 +421,22 @@ server <- function(input, output, session) {
         } %>%
     {
     if(input$data_layer == "Surveyed Locations"){
+      {
+      if(input$includesurveyed){
+        addCircles(., ~longitude, ~latitude,
+                   # layerId=~loc_id,
+                   data = .cws_env$locs_only,
+                   color = 'darkgrey',
+                   weight = case_when(input$map_zoom <=4 ~1,
+                                      input$map_zoom ==5 ~2,
+                                      input$map_zoom ==6 ~3,
+                                      input$map_zoom ==7 ~5,
+                                      input$map_zoom ==8 ~7,
+                                      input$map_zoom ==9 ~9,
+                                      input$map_zoom >9 ~11),
+                   opacity = 1, fill = TRUE, fillOpacity = 1 )
+
+      } else{.}} %>% {
       if(input$cluster){
         addCircleMarkers(., ~longitude, ~latitude,
                    layerId=~loc_id,
@@ -436,7 +452,7 @@ server <- function(input, output, session) {
                  stroke=FALSE, fillOpacity=0.4,
                  fillColor=pal(colourData))
       }
-      } else{.}
+      } } else{.}
       }  |>
       addScaleBar("bottomright",options = scaleBarOptions()) |>
       addLegend("bottomright", pal=pal, values=colourData, title="Data type",

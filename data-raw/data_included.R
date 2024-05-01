@@ -67,4 +67,14 @@ all_counts_core_example <- readr::read_rds("data-large//counts.rds") |>
   dplyr::left_join(naturecounts::meta_breeding_codes(),
                    by= dplyr::join_by(breeding_rank==rank,BreedingBirdAtlasCode==breeding_code )) |>
   dplyr::mutate( category =tidyr::replace_na(category,"None"))
-usethis::use_data(all_counts_core_example,all_events_example, overwrite = T, internal = T)
+
+
+
+
+locations_example <- readr::read_rds("data-large/locations.rds") |>
+  filter(location %in% all_events_example$location)
+
+
+usethis::use_data(all_counts_core_example,all_events_example,
+                  locations_example,
+                  overwrite = T, internal = T)

@@ -1,5 +1,6 @@
 #' Update data in shiny app
 #'
+#' @param base_folder_path path to location of files
 #' @param spp_list_csv
 #' @param spp_core_csv
 #' @param project_status_rds
@@ -10,11 +11,26 @@
 #' @export
 #'
 #' @examples
-update_data <- function(spp_list_csv=NULL,
+update_data <- function(base_folder_path =NULL,
+                        spp_list_csv=NULL,
                         spp_core_csv = NULL,
                         project_status_rds = NULL,
                         all_events_rds = NULL,
-                        all_counts_rds = NULL){
+                        all_counts_rds = NULL,
+                        locations_rds = NULL){
+
+
+
+  if(!is.null(base_folder_path)){
+    l <- ls()
+    l <- l[!grepl("base_folder_path", l)]
+    for(i in l){
+      if(!is.null(get(i))){
+      assign(i, glue::glue("{base_folder_path}/{get(i)}"))
+        }
+    }
+  }
+
 
     if(!is.null(spp_list_csv)){
     .cws_env$spp_list <- spp_list_csv |>
@@ -45,6 +61,11 @@ update_data <- function(spp_list_csv=NULL,
       readr::read_rds()
     .cws_env$comple_date <- project_status_rds |>
       file.info() |> dplyr::pull(mtime) |> lubridate::as_date()
+
+    .cws_env$in_field <- dplyr::filter(.cws_env$project_status,
+                                       project_status %in% c("ARUs in Field",
+                                                             "Awaiting processing")) |>
+      dplyr::pull(project)
     }
 
 
@@ -91,7 +112,12 @@ update_data <- function(spp_list_csv=NULL,
       dplyr::mutate( category =tidyr::replace_na(category,"None"))
     rlang::inform("all_counts_core updated:")
     glimpse(.cws_env$all_counts_core)
-}
+  }
+
+  if(!is.null(locations_rds)){
+    .cws_env$locations <- readr::read_rds(locations_rds)
+  }
+
 
     ## Update calculated values
 
@@ -108,7 +134,7 @@ update_data <- function(spp_list_csv=NULL,
     .cws_env$all_time_periods <- unique(.cws_env$all_events$Time_period)
     .cws_env$all_time_periods <- .cws_env$all_time_periods[stringr::str_detect(.cws_env$all_time_periods,
                                                                                "Missing", negate=T)]
-
+    .cws_env$locs_only <- .cws_env$locations[.cws_env$locations$project %in% .cws_env$in_field,]
 
 
     .cws_env$f <- .cws_env$spp_core |> dplyr::filter(English_Name %in% .cws_env$all_species$species) |>

@@ -43,6 +43,12 @@ initData <- function(){
                                        package = 'Shiny.CWS.ONT',
                                        mustWork = TRUE) |>
   readr::read_rds()
+
+.cws_env$in_field <- dplyr::filter(.cws_env$project_status,
+                                   project_status %in% c("ARUs in Field",
+                                                         "Awaiting processing")) |>
+  dplyr::pull(project)
+
 .cws_env$comple_date <- system.file("extdata", "data",
                                     "project_status.rds",
                                     package = 'Shiny.CWS.ONT',
@@ -66,7 +72,7 @@ initData <- function(){
 .cws_env$all_time_periods <- .cws_env$all_time_periods[stringr::str_detect(.cws_env$all_time_periods,
                                                          "Missing", negate=T)]
 
-
+.cws_env$locs_only <- .cws_env$locations[.cws_env$locations$project %in% .cws_env$in_field,]
 
 .cws_env$f <- .cws_env$spp_core |> dplyr::filter(English_Name %in% .cws_env$all_species$species) |>
   dplyr::distinct(TC, TC_L)
