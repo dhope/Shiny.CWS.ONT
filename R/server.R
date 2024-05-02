@@ -170,9 +170,9 @@ server <- function(input, output, session) {
       dplyr::filter(.,event_id %in% active_events &
                       species_name_clean == input$species) %>%
           {
-            if( ('Naturecounts' %in% input$source) & (length(input$source)==1)){
-              dplyr::filter(., category %in% input$breeding)
-            } else{.}
+            # if( ('Naturecounts' %in% input$source) & (length(input$source)==1)){
+              dplyr::filter(., BreedingCode %in% input$breeding)
+            # } else{.}
           } |>
           # left_join(active_events() |>
           #             dplyr::select(event_id, doy) |>

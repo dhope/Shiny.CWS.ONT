@@ -1,7 +1,10 @@
 .cws_env <- new.env(parent = emptyenv())
 .cws_env$t2sr_range <- c(-30,120)
 .cws_env$t2ss_range <- c(-30,120)
-.cws_env$bird_codes <- c("PROB", "CONF", "POSS", "OBS ")
+.cws_env$bird_codes <- c('A', 'AE', 'B', 'CF', 'D', 'DD', 'FS', 'FY', 'H',
+                         'H*', 'M', 'N', 'NB', 'NE', 'None provided', 'NU',
+                         'NY', 'P', 'S', 'S*', 'T', 'V', 'X')
+  # c("PROB", "CONF", "POSS", "OBS ")
 
 #' Set options for matching column headers in GPS text logs
 #' @noRd

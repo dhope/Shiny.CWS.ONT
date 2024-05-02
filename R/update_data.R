@@ -19,6 +19,18 @@ update_data <- function(base_folder_path =NULL,
                         all_counts_rds = NULL,
                         locations_rds = NULL){
 
+  non_vocal_spp <- c("Wilson's Snipe",
+                     "Yellow-bellied Sapsucker",
+                     "Downy Woodpecker",
+                     "Ruffed Grouse",
+                     "Hairy Woodpecker",
+                     "Pileated Woodpecker", "Red-bellied Woodpecker",
+                     "American Woodcock",
+                     "Black-backed Woodpecker",
+                     "Red-headed Woodpecker",
+                     "Sharp-tailed Grouse",
+                     "American Three-toed Woodpecker",
+                     "Spruce Grouse")
 
 
   if(!is.null(base_folder_path)){
@@ -109,7 +121,19 @@ update_data <- function(base_folder_path =NULL,
       dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == English_Name)) |>
       dplyr::left_join(naturecounts::meta_breeding_codes(),
                        by= dplyr::join_by(BreedingBirdAtlasCode==breeding_code )) |>
-      dplyr::mutate( category =tidyr::replace_na(category,"None"))
+      dplyr::mutate( category =tidyr::replace_na(category,"None"),
+                     BreedingCode =
+                       dplyr::case_when(
+                         !is.na(BreedingBirdAtlasCode)~BreedingBirdAtlasCode,
+                         (!is.na(collection) & stringr::str_detect(collection, "ONATLAS3"))~"None provided",
+                         stringr::str_detect(vocalizations, "Song") ~ "S*",
+                         stringr::str_detect(vocalizations, "S-C") ~ "S*",
+                         (stringr::str_detect(vocalizations, "Non-vocal") & species_name_clean %in% non_vocal_spp )~"S*",
+                         (stringr::str_detect(vocalizations, "NV-C")  & species_name_clean %in% non_vocal_spp )~"S*",
+                         stringr::str_detect(vocalizations, "Non-vocal") ~"H*",
+                         stringr::str_detect(vocalizations, "Call") %in% vocalizations ~"H*",
+                         TRUE~"None provided"
+                         ))
     rlang::inform("all_counts_core updated:")
     glimpse(.cws_env$all_counts_core)
   }

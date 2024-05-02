@@ -22,6 +22,19 @@ spp_core <- readr::read_csv("inst/extdata/data/ECCC_Avian_Core_20230518.csv", co
 
   ) )
 
+non_vocal_spp <- c("Wilson's Snipe",
+                   "Yellow-bellied Sapsucker",
+                   "Downy Woodpecker",
+                   "Ruffed Grouse",
+                   "Hairy Woodpecker",
+                   "Pileated Woodpecker", "Red-bellied Woodpecker",
+                   "American Woodcock",
+                   "Black-backed Woodpecker",
+                   "Red-headed Woodpecker",
+                   "Sharp-tailed Grouse",
+                   "American Three-toed Woodpecker",
+                   "Spruce Grouse")
+
 # All locations and events
 all_events <- readr::read_rds("data-large/all_events.rds") |>
   dplyr::bind_rows(list(
@@ -68,13 +81,25 @@ all_counts_core_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scra
   dplyr::left_join(spp_core, by = dplyr::join_by(species_name_clean == English_Name)) |>
   dplyr::left_join(naturecounts::meta_breeding_codes(),
                    by= dplyr::join_by(breeding_rank==rank,BreedingBirdAtlasCode==breeding_code )) |>
-  dplyr::mutate( category =tidyr::replace_na(category,"None"))
+  dplyr::mutate( category =tidyr::replace_na(category,"None"),
+                 BreedingCode =
+                   dplyr::case_when(
+                     !is.na(BreedingBirdAtlasCode)~BreedingBirdAtlasCode,
+                     (!is.na(collection) & stringr::str_detect(collection, "ONATLAS3"))~"None provided",
+                     stringr::str_detect(vocalizations, "Song") ~ "S*",
+                     stringr::str_detect(vocalizations, "S-C") ~ "S*",
+                     (stringr::str_detect(vocalizations, "Non-vocal") & species_name_clean %in% non_vocal_spp )~"S*",
+                     (stringr::str_detect(vocalizations, "NV-C")  & species_name_clean %in% non_vocal_spp )~"S*",
+                     stringr::str_detect(vocalizations, "Non-vocal") ~"H*",
+                     stringr::str_detect(vocalizations, "Call") %in% vocalizations ~"H*",
+                     TRUE~"None provided"
+                   ))
 
 
-
+library(sf)
 
 locations_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scratchpad/SHINY_DATA_SHARE/data-large/locations.rds") |>
-  filter(location %in% all_events_example$location)
+  dplyr::filter(location %in% all_events_example$location)
 
 
 usethis::use_data(all_counts_core_example,all_events_example,
