@@ -51,7 +51,13 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                                                     min = ceiling(get_env_ob("t2ss_range")[[1]]),
                                                     max = ceiling(get_env_ob("t2ss_range")[[2]])
                                                     ,
-                                                    step = 5))),
+                                                    step = 5)),
+                       checkboxInput("use_all_data",
+                                     markdown(
+                                     glue::glue("Load **ALL** data?
+
+ {emo::ji('warning')} This may **significantly** slow the server {emo::ji('warning')}")),
+                                     value = FALSE)) ,
                       tableOutput("n_events")
                       ),
                     mainPanel(

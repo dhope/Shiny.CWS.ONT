@@ -109,8 +109,9 @@ server <- function(input, output, session) {
   filtered_events <- reactive({
     .cws_env$all_events |>
       dplyr::left_join(project_summary(),
-                by = dplyr::join_by(project, source)) |>
-      dplyr::filter(
+                by = dplyr::join_by(project, source)) %>% {
+                  if(input$use_all_data){.} else{
+      dplyr::filter(.,
         !is.na(project_name) &
         !project_name %in% excluded_projects()  &
           year>=input$years[1] &
@@ -142,7 +143,10 @@ server <- function(input, output, session) {
 
     }
       }
-  })
+                  }
+                }
+    }
+                  )
 
 
   ## Reactive to summarize by site based on settings ------------

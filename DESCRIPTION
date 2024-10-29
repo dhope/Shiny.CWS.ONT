@@ -27,11 +27,14 @@ Imports:
     forcats,
     pkgload,
     htmltools,
-    naturecounts (>= 0.4.0)
+    naturecounts (>= 0.4.0),
+    emo,
+    glue
 Suggests: 
     hexbin
 Depends: 
-    R (>= 2.10)
+    R (>= 4.1.0)
 LazyData: false
 Remotes: 
     BirdsCanada/naturecounts
+    hadley/emo
