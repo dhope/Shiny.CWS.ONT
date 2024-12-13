@@ -128,7 +128,7 @@ update_data <- function(base_folder_path =NULL,
                       stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
                       species_name_clean %in% .cws_env$spp_list$english_name) |>  #TODO maybe allow these to be added later
       dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == English_Name)) |>
-      dplyr::left_join(naturecounts::meta_breeding_codes(),
+      dplyr::left_join(meta_breeding,
                        by= dplyr::join_by(BreedingBirdAtlasCode==breeding_code )) |>
       dplyr::mutate( category =tidyr::replace_na(category,"None"),
                      BreedingCode =

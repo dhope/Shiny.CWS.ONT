@@ -79,7 +79,7 @@ all_counts_core_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scra
                   stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
                   species_name_clean %in% spp_list$english_name) |>  #TODO maybe allow these to be added later
   dplyr::left_join(spp_core, by = dplyr::join_by(species_name_clean == English_Name)) |>
-  dplyr::left_join(naturecounts::meta_breeding_codes(),
+  dplyr::left_join(meta_breeding,
                    by= dplyr::join_by(breeding_rank==rank,BreedingBirdAtlasCode==breeding_code )) |>
   dplyr::mutate( category =tidyr::replace_na(category,"None"),
                  BreedingCode =
@@ -105,3 +105,14 @@ locations_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scratchpad
 usethis::use_data(all_counts_core_example,all_events_example,
                   locations_example,
                   overwrite = T, internal = T)
+
+
+
+library(naturecounts)
+
+meta_breeding <- naturecounts::meta_breeding_codes()
+
+usethis::use_data(meta_breeding,
+                  overwrite = T, internal = T)
+
+
