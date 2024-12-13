@@ -36,5 +36,5 @@ Depends:
     R (>= 4.1.0)
 LazyData: false
 Remotes: 
-    BirdsCanada/naturecounts
+    BirdsCanada/naturecounts,
     hadley/emo
