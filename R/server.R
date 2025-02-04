@@ -261,6 +261,8 @@ server <- function(input, output, session) {
   })
 
   plot_p_obs <- function(){
+    if (nrow(counts_in_bounds()) == 0)
+      return(NULL)
     counts_in_bounds() |>
     ggplot(aes(lubridate::ymd("2020-01-01") + doy-1, t2se, z= total_count)) +
       stat_summary_hex(fun = function(x){
@@ -276,14 +278,8 @@ server <- function(input, output, session) {
                     base_family = "Roboto Condensed") +
       theme(legend.position = 'bottom')
   }
-  output$p_obs <- renderPlot({
-    # If no data are in view, don't plot
-    if (nrow(counts_in_bounds()) == 0)
-      return(NULL)
-
-    plot_p_obs()
-
-  })
+  output$p_obs <- renderPlot({plot_p_obs()})
+  output$p_obs_out <- renderPlot({plot_p_obs()})
 
 
   output$hist <- renderPlot({
@@ -536,12 +532,15 @@ server <- function(input, output, session) {
     }
   )
 
+  ## Download image ------------------------
   output$downloadImage <- downloadHandler(
       filename = function() {
-        paste('image-', Sys.Date(), '.jpeg', sep='')
+        paste('p_obs_',input$species,"_", Sys.Date(), '.jpeg', sep='')
       },
       content = function(con) {
-        ggplot2::ggsave(plot =plot_p_obs() ,filename =  con)
+        ggplot2::ggsave(plot =plot_p_obs() ,filename =  con,
+                        width = input$image_width,
+                        units = 'cm', dpi = as.numeric(input$image_res))
       }
     )
 
