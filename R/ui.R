@@ -177,14 +177,23 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                     ## Sidebar layout with input and output definitions ----
                     sidebarLayout(
 
-
-
-
-
                       ## Sidebar panel for inputs ----
                       sidebarPanel(
 
-                        downloadLink('downloadImage', 'Download P Obs Plot'),
+                        sliderInput('image_width', "Image width (cm)", min = 10,max = 30,
+                                    step = 2.5, value = 17.5),
+
+                        selectInput('image_res', "Image resolution",
+                                    choices = c(72, 300, 600),
+                                    multiple = F),
+
+                        downloadButton('downloadImage', 'Download P Obs Plot') ),
+                     mainPanel( plotOutput("p_obs_out"))
+                      ) ,
+
+                    sidebarLayout(
+                    sidebarPanel(
+
 
                         ## Show table, logical ----
                         checkboxInput("showtable", "Show table?", FALSE),
@@ -202,7 +211,7 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                         # Button
                         downloadButton("downloadData", "Download")
 
-                      ),
+                      ) ,
 
                       ## Main panel for displaying outputs ----
                       mainPanel(
@@ -212,7 +221,8 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
 
                       )
 
-                    ) )
+                    )
+)
 )
 }
 
