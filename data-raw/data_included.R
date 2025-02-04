@@ -76,8 +76,8 @@ library(naturecounts)
 
 meta_breeding <- naturecounts::meta_breeding_codes()
 
-usethis::use_data(meta_breeding,
-                  overwrite = T, internal = T)
+# usethis::use_data(meta_breeding,
+#                   overwrite = T, internal = T)
 
 all_counts_core_example <- readr::read_rds(glue::glue("{dat_loc}/counts.rds")) |>
   # dplyr::bind_rows(list(data_boreal_2016$counts,
@@ -110,7 +110,7 @@ locations_example <- readr::read_rds(glue::glue("{dat_loc}/locations.rds") )|>
 
 
 usethis::use_data(all_counts_core_example,all_events_example,
-                  locations_example,
+                  locations_example,meta_breeding,
                   overwrite = T, internal = T)
 
 
