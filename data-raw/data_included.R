@@ -1,14 +1,15 @@
 
-
-data_boreal_2016 <- readr::read_rds("data-large//Boreal2016_data_summary.rds")
-data_boreal_2012 <- readr::read_rds("data-large//Boreal_Burns_ARU_2012_data_summary.rds")
+dat_loc <- "C:/Users/hoped/OneDrive - EC-EC/Scratchpad/SHINY_DATA_SHARE/forShiny"
+  # "path_to_files"
+# data_boreal_2016 <- readr::read_rds(glue::glue("{dat_loc}/Boreal2016_data_summary.rds"))
+# data_boreal_2012 <- readr::read_rds(glue::glue("{dat_loc}/Boreal_Burns_ARU_2012_data_summary.rds"))
 
 project_status <- "inst/extdata/data/project_status.rds" |>
   readr::read_rds()
 spp_list <- readr::read_csv("inst/extdata/data/obba_significant_species_list.csv") |>
   janitor::clean_names()
 
-spp_core <- readr::read_csv("inst/extdata/data/ECCC_Avian_Core_20230518.csv", col_types = readr::cols()) |>
+spp_core <- readr::read_csv("inst/extdata/data/ECCC_Avian_Core_20241025.csv", col_types = readr::cols()) |>
   dplyr::mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
   dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
   dplyr::mutate(TC_L = dplyr::case_when(
@@ -36,10 +37,10 @@ non_vocal_spp <- c("Wilson's Snipe",
                    "Spruce Grouse")
 
 # All locations and events
-all_events <- readr::read_rds("data-large/all_events.rds") |>
-  dplyr::bind_rows(list(
-    data_boreal_2016$events,
-    data_boreal_2012$events)) |>
+all_events <- readr::read_rds(glue::glue("{dat_loc}/all_events.rds")) |>
+  # dplyr::bind_rows(list(
+  #   data_boreal_2016$events,
+  #   data_boreal_2012$events)) |>
   dplyr::filter(type!="Summary") |>
   dplyr::mutate(
     type = dplyr::case_when(
@@ -71,10 +72,16 @@ withr::with_seed(42,{
 # usethis::use_data(all_events_example, overwrite = T, internal = T)
 # readr::write_rds(all_events_example, "inst/extdata/data/all_events_example.rds")
 
+library(naturecounts)
 
-all_counts_core_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scratchpad/SHINY_DATA_SHARE/data-large//counts.rds") |>
-  dplyr::bind_rows(list(data_boreal_2016$counts,
-                 data_boreal_2012$counts) ) |>
+meta_breeding <- naturecounts::meta_breeding_codes()
+
+usethis::use_data(meta_breeding,
+                  overwrite = T, internal = T)
+
+all_counts_core_example <- readr::read_rds(glue::glue("{dat_loc}/counts.rds")) |>
+  # dplyr::bind_rows(list(data_boreal_2016$counts,
+  #                data_boreal_2012$counts) ) |>
   dplyr::filter(event_id %in% all_events_example$event_id &
                   stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
                   species_name_clean %in% spp_list$english_name) |>  #TODO maybe allow these to be added later
@@ -98,7 +105,7 @@ all_counts_core_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scra
 
 library(sf)
 
-locations_example <- readr::read_rds("C:/Users/HopeD/OneDrive - EC-EC/Scratchpad/SHINY_DATA_SHARE/data-large/locations.rds") |>
+locations_example <- readr::read_rds(glue::glue("{dat_loc}/locations.rds") )|>
   dplyr::filter(location %in% all_events_example$location)
 
 
@@ -108,11 +115,5 @@ usethis::use_data(all_counts_core_example,all_events_example,
 
 
 
-library(naturecounts)
-
-meta_breeding <- naturecounts::meta_breeding_codes()
-
-usethis::use_data(meta_breeding,
-                  overwrite = T, internal = T)
 
 
