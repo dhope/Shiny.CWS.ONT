@@ -369,7 +369,7 @@ server <- function(input, output, session) {
 
 
 
-    radius <- sites_summarize()$n / max(sites_summarize()$n) * point_size*3000
+    radius <- (.5+sites_summarize()$n / max(sites_summarize()$n) )* point_size*3000
 
     colourData <- sites_summarize()$type
     colourDataspp <- species_summary()$type
