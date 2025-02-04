@@ -4,6 +4,7 @@ library(dplyr)
 
 # Define server to create map with options
 server <- function(input, output, session) {
+
   # Taken from https://github.com/rstudio/shiny-examples/blob/main/063-superzip-example/server.R#L14
 
   #https://stackoverflow.com/questions/42159804/how-to-collapse-sidebarpanel-in-shiny-app
@@ -259,13 +260,9 @@ server <- function(input, output, session) {
                     base_family = "Roboto Condensed")
   })
 
-  output$p_obs <- renderPlot({
-    # If no data are in view, don't plot
-    if (nrow(counts_in_bounds()) == 0)
-      return(NULL)
-
+  plot_p_obs <- function(){
     counts_in_bounds() |>
-      ggplot(aes(lubridate::ymd("2020-01-01") + doy-1, t2se, z= total_count)) +
+    ggplot(aes(lubridate::ymd("2020-01-01") + doy-1, t2se, z= total_count)) +
       stat_summary_hex(fun = function(x){
         if(length(x)==0) return(0)
         (sum(x>0)/length(x))
@@ -278,6 +275,14 @@ server <- function(input, output, session) {
       theme_minimal(base_size = 14,
                     base_family = "Roboto Condensed") +
       theme(legend.position = 'bottom')
+  }
+  output$p_obs <- renderPlot({
+    # If no data are in view, don't plot
+    if (nrow(counts_in_bounds()) == 0)
+      return(NULL)
+
+    plot_p_obs()
+
   })
 
 
@@ -320,6 +325,7 @@ server <- function(input, output, session) {
   observe({
     # colorBy <- input$color
     # sizeBy <- input$size
+    point_size <- input$base_point_size |> as.numeric()
 
     # if (colorBy == "superzip") {
     #   # Color and palette are treated specially in the "superzip" case, because
@@ -359,11 +365,17 @@ server <- function(input, output, session) {
       species_summary()$n_observations  ) %>%
       lapply(htmltools::HTML)
 
-    radius <- sites_summarize()$n / max(sites_summarize()$n) * 30000
+
+
+
+
+    radius <- sites_summarize()$n / max(sites_summarize()$n) * point_size*3000
 
     colourData <- sites_summarize()$type
     colourDataspp <- species_summary()$type
-    pal <- colorFactor("viridis", colourData)
+    pal <- colorFactor(c("#4B2991", "#EA4F88", "#888888") , colourData)
+    # "#88CCEE" "#CC6677" "#DDCC77" "#117733" "#888888"
+    # "#4B2991" "#A52FA2" "#EA4F88" "#FA9074" "#EDD9A3"
     add_clusters <- switch(isTRUE(input$cluster), markerClusterOptions(
       # Leaving this here in case I want to customize cluster colours at some point
         #     iconCreateFunction=JS("function (cluster) {
@@ -389,7 +401,7 @@ server <- function(input, output, session) {
       if(input$data_layer == "Species Observations" || input$data_layer == "Community Builder") {
         {if(input$show_effort){
           addCircles(., ~longitude, ~latitude,
-                   layerId=~loc_id,
+                   layerId=~loc_id,radius = point_size*1000,
                    data = obsInBounds(),color = 'grey',
                    weight = case_when(input$map_zoom <=4 ~1,
                                       input$map_zoom ==5 ~2,
@@ -399,13 +411,14 @@ server <- function(input, output, session) {
                                       input$map_zoom ==9 ~9,
                                       input$map_zoom >9 ~11),
                    opacity = 1, fill = TRUE, fillOpacity = 1 ) } else{.} }|>
-          addCircleMarkers( ~longitude, ~latitude,
+          addCircles( ~longitude, ~latitude,
                            data = species_summary(),
-                           clusterOptions = add_clusters,
+                           # clusterOptions = add_clusters,
                            layerId=~loc_id,popup= lab_counts,
+                      radius = point_size*3000,
                            # stroke=FALSE, fillOpacity=1,
                            color=pal(colourDataspp),
-                           fill = F
+                           fill = T
 
           # addAwesomeMarkers( ~longitude, ~latitude,data = species_summary(),
           #                    clusterOptions = add_clusters,
@@ -445,16 +458,17 @@ server <- function(input, output, session) {
       if(input$cluster){
         addCircleMarkers(., ~longitude, ~latitude,
                    layerId=~loc_id,
+                   radius=point_size,
                    data =  sites_summarize(),
                    clusterOptions = add_clusters,
-                   stroke=FALSE, fillOpacity=0.4,
+                   stroke=FALSE, fillOpacity=1,
                    fillColor=pal(colourData))
       } else{
       addCircles(., ~longitude, ~latitude,
                   radius=radius,
                   layerId=~loc_id,
                  data =  sites_summarize(),
-                 stroke=FALSE, fillOpacity=0.4,
+                 stroke=FALSE, fillOpacity=1,
                  fillColor=pal(colourData))
       }
       } } else{.}
@@ -521,6 +535,16 @@ server <- function(input, output, session) {
       readr::write_csv(datasetInput(), file)
     }
   )
+
+  output$downloadImage <- downloadHandler(
+      filename = function() {
+        paste('image-', Sys.Date(), '.jpeg', sep='')
+      },
+      content = function(con) {
+        ggplot2::ggsave(plot =plot_p_obs() ,filename =  con)
+      }
+    )
+
 
 
 

@@ -24,7 +24,7 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                                                                        "Checklist",
                                                                        "Point Count"),inline = T
                        ),
-                       sliderInput('years', "Years included", value = c(2021, 2023),
+                       sliderInput('years', "Years included", value = c(2021, 2024),
                                    min = min(get_env_ob("all_events")$year, na.rm = T),
                                    max =max(get_env_ob("all_events")$year, na.rm = T), sep = ""),
                        dateRangeInput('daterange',"Range of dates (ignore year)",
@@ -104,7 +104,7 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                         absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                                       draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
                                       width = 330, height = "auto",
-                                        selectInput("base_point_size", "Adjust point size",choices = list("Small"=.1, "Medium"=1, "Large"=2 ),
+                                        selectInput("base_point_size", "Adjust point size",choices = list("Small"=.5, "Medium"=1, "Large"=2 ),
                                                     selected = 1),#min = .1, max = 500, step =50, value = 100),
                                       radioButtons("data_layer", "Data layer", choices = c("None", "Surveyed Locations", "Species Observations", "Community Builder"),
                                                    selected = "None"),
@@ -177,8 +177,14 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                     ## Sidebar layout with input and output definitions ----
                     sidebarLayout(
 
+
+
+
+
                       ## Sidebar panel for inputs ----
                       sidebarPanel(
+
+                        downloadLink('downloadImage', 'Download P Obs Plot'),
 
                         ## Show table, logical ----
                         checkboxInput("showtable", "Show table?", FALSE),
