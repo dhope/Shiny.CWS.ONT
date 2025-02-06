@@ -24,7 +24,7 @@ initData <- function(){
 
 .cws_env$spp_core <-
   system.file("extdata", "data",
-              "ECCC_Avian_Core_20230518.csv",
+              "ECCC_Avian_Core_20241025.csv",
               package = 'Shiny.CWS.ONT',
               mustWork = TRUE) |>
   readr::read_csv(col_types = readr::cols()) |>
