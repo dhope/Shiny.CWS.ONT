@@ -94,6 +94,8 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                                                              condition = "input.data_layer=='Species Observations'",
                                                              checkboxInput("show_effort", "Show effort?", FALSE),
                                                              checkboxInput('limit_count', "Limit count?", FALSE ),
+                                                             hr(),
+                                                             em("Plots show only data within map window"),
                                                              plotOutput("p_obs", height = 500),
                                                              plotOutput("hist", height = 200)
                                             )
@@ -179,7 +181,10 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
 
                       ## Sidebar panel for inputs ----
                       sidebarPanel(
-
+                        h2("Figure download"),
+                        p("Select species and map window in 'Interactive map' tab. ",
+                        em("Figure is only the species selected there and current map window")),
+                        hr(),
                         sliderInput('image_width', "Image width (cm)", min = 10,max = 30,
                                     step = 2.5, value = 17.5),
 
@@ -193,8 +198,10 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
 
                     sidebarLayout(
                     sidebarPanel(
-
-
+                      h2("Download dataset"),
+                      p("Depending on choice, data downloaded will",
+                      "use data selected in other tabs"),
+                      hr(),
                         ## Show table, logical ----
                         checkboxInput("showtable", "Show table?", FALSE),
 

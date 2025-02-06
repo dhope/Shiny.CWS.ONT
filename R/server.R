@@ -260,7 +260,7 @@ server <- function(input, output, session) {
                     base_family = "Roboto Condensed")
   })
 
-  plot_p_obs <- function(){
+  plot_p_obs <- function(spp_name = NULL){
     if (nrow(counts_in_bounds()) == 0)
       return(NULL)
     counts_in_bounds() |>
@@ -272,14 +272,14 @@ server <- function(input, output, session) {
       facet_wrap(~Time_period,
                  scales = 'free', ncol = 1) +
       labs(x = "", y = "Time to sun event",
-           fill = "Proportion with Obs") +
+           fill = "Proportion with Obs", title = spp_name) +
       rcartocolor::scale_fill_carto_c() +
       theme_minimal(base_size = 14,
                     base_family = "Roboto Condensed") +
       theme(legend.position = 'bottom')
   }
   output$p_obs <- renderPlot({plot_p_obs()})
-  output$p_obs_out <- renderPlot({plot_p_obs()})
+  output$p_obs_out <- renderPlot({plot_p_obs(input$species)})
 
 
   output$hist <- renderPlot({
