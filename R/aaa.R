@@ -5,6 +5,7 @@
                          'H*', 'M', 'N', 'NB', 'NE', 'None provided', 'NU',
                          'NY', 'P', 'S', 'S*', 'T', 'V', 'X')
   # c("PROB", "CONF", "POSS", "OBS ")
+.cws_env$sf_data <- NULL
 
 #' Set options for matching column headers in GPS text logs
 #' @noRd
