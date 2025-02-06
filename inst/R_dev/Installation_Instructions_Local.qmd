@@ -1,0 +1,96 @@
+---
+title: "Installation Instructions CWS Ontario Shiny App"
+author: "David Hope"
+format: docx
+---
+
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(eval=FALSE, echo = T)
+
+
+
+```
+
+
+## Requirements
+
+To install a local version of the app, you'll need to install `R` from the 
+software centre.
+
+You'll also need the "pak" package. It can be installed using: 
+```{r}
+install.packages("pak")
+```
+
+## Package installation
+
+Once you have the "pak" package installed, should be able to 
+run the following code to install the 'Shiny.CWS.ONT' package:
+```{r}
+pak::pak("//int.ec.gc.ca/sys/InGEO/GW/EC1130MigBirds_OiseauxMig/ON_CWS/THEMES/Data_Explorer_Shiny/Shiny.CWS.ONT_0.1.0.zip")
+```
+or  you could download the above file to your working directory and run:
+```{r}
+pak::pak("Shiny.CWS.ONT_0.1.0.zip")
+```
+
+## Data import
+
+The R packages comes with a small sample of the data, which will allow you to test out the app. However to
+get the app running with the full dataset you'll need to copy the following file to your local computer and unpack in a working directory: 
+[Ctrl+Click here to open the Data_Explorer_Shiny folder](\\\\int.ec.gc.ca\\\sys\\\InGEO\\\GW\\\EC1130MigBirds_OiseauxMig\\\ON_CWS\\\THEMES\\\Data_Explorer_Shiny\\\\)
+
+[2025-02-05_Shiny_Data.7z](\\\\int.ec.gc.ca\sys\\\InGEO\\\GW\\\EC1130MigBirds_OiseauxMig\\\ON_CWS\\\THEMES\\\Data_Explorer_Shiny\\\2025-02-05_Shiny_Data.7z)
+
+
+## To run the app:
+
+In order to get the app running run the following code in your R console or Rstudio.
+
+
+```{r}
+library('Shiny.CWS.ONT')
+update_data(base_folder_path ="path/to/data/folder/",
+            all_events_rds = "all_events.rds",
+            all_counts_rds = "counts.rds", 
+            project_status_rds = "project_status.rds",
+            locations_rds = "locations.rds")
+
+run_shiny_app()
+```
+Be sure to **replace  "path/to/data/folder/” with the path to your data folder.**
+The `update_data()` function will load in the full dataset you downloaded and 
+needs to be run every time you load the app or you will just have the example
+data loaded.
+
+
+## Bug report and feature request
+
+
+If you run into issues you can help improve and maintain the app by letting us know.
+This can be done by 
+by creating a bug report form at the following folder (Ctrl + Click to open):
+[BUG_REPORTS](\\int.ec.gc.ca\sys\InGEO\GW\EC1130MigBirds_OiseauxMig\ON_CWS\THEMES\Data_Explorer_Shiny\BUG_REPORTS). You will find a template for the bug report there.
+
+
+If there are specific features you'd like to see in the app you can complete a feature
+request here: [FEATURE_REQUESTS](\\int.ec.gc.ca\sys\InGEO\GW\EC1130MigBirds_OiseauxMig\ON_CWS\THEMES\Data_Explorer_Shiny\FEATURE_REQUESTS). A template is also available here. 
+
+Completed forms can be emailed to [david.hope@ec.gc.ca](mailto:david.hope@ec.gc.ca) or left in the above
+folders.
+
+
+
+
+
+
+
+
+
+
+
+
