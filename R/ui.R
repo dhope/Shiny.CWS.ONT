@@ -54,9 +54,9 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                                                     step = 5)),
                        checkboxInput("use_all_data",
                                      markdown(
-                                     glue::glue("Load **ALL** data?
+                                     "Load **ALL** data?
 
- {emo::ji('warning')} This may **significantly** slow the server {emo::ji('warning')}")),
+ ⚠️ This may **significantly** slow the server ⚠️ "),
                                      value = FALSE)) ,
                       tableOutput("n_events")
                       ),
