@@ -27,7 +27,10 @@ Imports:
     forcats,
     pkgload,
     htmltools,
-    glue
+    glue,
+    leaflet.extras,
+    jsonlite,
+    geojsonio
 Suggests: 
     hexbin
 Depends: 

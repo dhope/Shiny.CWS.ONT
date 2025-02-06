@@ -5,6 +5,8 @@ library(dplyr)
 # Define server to create map with options
 server <- function(input, output, session) {
 
+
+
   # Taken from https://github.com/rstudio/shiny-examples/blob/main/063-superzip-example/server.R#L14
 
   #https://stackoverflow.com/questions/42159804/how-to-collapse-sidebarpanel-in-shiny-app
@@ -25,7 +27,15 @@ server <- function(input, output, session) {
       addProviderTiles(providers$Esri.WorldPhysical, group = "Physical") |>
       addProviderTiles(providers$OpenStreetMap, group = "Street") |>
       addProviderTiles(providers$OpenTopoMap, group = "Terrain") |>
-      setView(lng = -85.67, lat = 50.36, zoom = 6)
+      setView(lng = -85.67, lat = 50.36, zoom = 6) |>
+      leaflet.extras::addDrawToolbar(
+        targetGroup = 'draw', position = 'bottomright',
+        editOptions =
+          leaflet.extras::editToolbarOptions(
+            selectedPathOptions = leaflet.extras::selectedPathOptions())
+        )
+      #   ) |>
+      # leaflet.extras::addStyleEditor()
   })
 
   ## Project summary --------------
@@ -60,7 +70,13 @@ server <- function(input, output, session) {
     project_summary()$project_name[input$projects_rows_selected]
   })
 
-
+  # # ## Clear markers ---------------
+  # #
+  # observeEvent(input$clearoverlays, {
+  #   print(.cws_env$sf_data)
+  #   # leafletProxy("map") %>%
+  #   #   clearGroup("shapedrawn")
+  # })
 
 
   # Observation and Reactive functions ----------------------
@@ -91,14 +107,22 @@ server <- function(input, output, session) {
   obsInBounds <- reactive({
     if (is.null(input$map_bounds))
       return(filtered_events()[FALSE,])
+    if(!is.null(.cws_env$sf_data) ){
+      return(filtered_events() |>
+        sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove =F) |>
+      sf::st_filter(.cws_env$sf_data) |>
+        st_drop_geometry() )
+    } else{
+
     bounds <- input$map_bounds
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
 
-    dplyr::filter(filtered_events(),
+    return(dplyr::filter(filtered_events(),
            !project_name %in% excluded_projects() &
            latitude >= latRng[1] & latitude <= latRng[2] &
-             longitude >= lngRng[1] & longitude <= lngRng[2])
+             longitude >= lngRng[1] & longitude <= lngRng[2]) )
+  }
   })
 
 
@@ -504,7 +528,18 @@ server <- function(input, output, session) {
 
 
 
+  # New Feature --------
+  observeEvent(input$map_draw_new_feature, {
+    dat <- input$map_draw_new_feature # list
+    dat <- jsonlite::toJSON(dat, auto_unbox = TRUE) # string
+    .cws_env$sf_data <- geojsonio::geojson_sf(dat) # sf
+    # print(sf_data)
+  })
 
+  # Deleted features
+  observeEvent(input$map_draw_deleted_features, {
+    .cws_env$sf_data <- NULL
+  })
 
 
 # Download datasets ---------------
