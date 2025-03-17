@@ -541,6 +541,14 @@ server <- function(input, output, session) {
     .cws_env$sf_data(NULL)
   })
 
+  # Edited features
+  observeEvent(input$map_draw_edited_features, {
+    # cat("\n\nEdited Features\n")
+    dat <- input$map_draw_edited_features # list
+    dat <- jsonlite::toJSON(dat, auto_unbox = TRUE) # string
+    .cws_env$sf_data(geojsonio::geojson_sf(dat)) # sf
+  })
+
 
 # Download datasets ---------------
   datasetInput <- reactive({
