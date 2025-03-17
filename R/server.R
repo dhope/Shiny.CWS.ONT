@@ -5,7 +5,7 @@ library(dplyr)
 # Define server to create map with options
 server <- function(input, output, session) {
 
-
+  .cws_env$sf_data <- reactiveVal(NULL)
 
   # Taken from https://github.com/rstudio/shiny-examples/blob/main/063-superzip-example/server.R#L14
 
@@ -107,10 +107,10 @@ server <- function(input, output, session) {
   obsInBounds <- reactive({
     if (is.null(input$map_bounds))
       return(filtered_events()[FALSE,])
-    if(!is.null(.cws_env$sf_data) ){
+    if(!is.null(.cws_env$sf_data()) ){
       return(filtered_events() |>
         sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326, remove =F) |>
-      sf::st_filter(.cws_env$sf_data) |>
+      sf::st_filter(.cws_env$sf_data()) |>
         st_drop_geometry() )
     } else{
 
@@ -532,7 +532,7 @@ server <- function(input, output, session) {
   observeEvent(input$map_draw_new_feature, {
     dat <- input$map_draw_new_feature # list
     dat <- jsonlite::toJSON(dat, auto_unbox = TRUE) # string
-    .cws_env$sf_data <- geojsonio::geojson_sf(dat) # sf
+    .cws_env$sf_data(geojsonio::geojson_sf(dat)) # sf
     # print(sf_data)
   })
 
