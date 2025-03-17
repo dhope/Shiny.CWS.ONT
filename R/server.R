@@ -538,7 +538,7 @@ server <- function(input, output, session) {
 
   # Deleted features
   observeEvent(input$map_draw_deleted_features, {
-    .cws_env$sf_data <- NULL
+    .cws_env$sf_data(NULL)
   })
 
 
