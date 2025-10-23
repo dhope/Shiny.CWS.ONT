@@ -15,49 +15,20 @@
 
 
 initData <- function(){
-.cws_env$spp_list <- system.file("extdata", "data",
-                                 "obba_significant_species_list.csv",
-                                 package = 'Shiny.CWS.ONT',
-                                 mustWork = TRUE) |>
-  readr::read_csv(col_types = readr::cols()) |>
-  janitor::clean_names()
+.cws_env$spp_list <- spp_list
 
-.cws_env$spp_core <-
-  system.file("extdata", "data",
-              "ECCC_Avian_Core_20241025.csv",
-              package = 'Shiny.CWS.ONT',
-              mustWork = TRUE) |>
-  readr::read_csv(col_types = readr::cols()) |>
-  dplyr::mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
-  dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
-  dplyr::mutate(TC_L = case_when(
-    TC == "LA"~ "Landbirds",
-    TC == "SH"~ "Shorebirds",
-    TC == "WB" ~ "Waterbirds",
-    TC == "WB-InMa" ~ "Waterbirds - Inland",
-    TC == "WB-Sea" ~ "Seabirds",
-    TC == "WF" ~ "Waterfowl",
-    TRUE ~ "Non-migratory"
-  ) )
+.cws_env$spp_core <- spp_core
 
 
 
-.cws_env$project_status <- system.file("extdata", "data",
-                                       "project_status.rds",
-                                       package = 'Shiny.CWS.ONT',
-                                       mustWork = TRUE) |>
-  readr::read_rds()
+.cws_env$project_status <- project_status
 
 .cws_env$in_field <- dplyr::filter(.cws_env$project_status,
                                    project_status %in% c("ARUs in Field",
                                                          "Awaiting processing")) |>
   dplyr::pull(project)
 
-.cws_env$comple_date <- system.file("extdata", "data",
-                                    "project_status.rds",
-                                    package = 'Shiny.CWS.ONT',
-                                    mustWork = TRUE) |>
-  file.info() |> dplyr::pull(mtime) |> lubridate::as_date()
+.cws_env$comple_date <- compile_date
 
 
 .cws_env$all_events <- all_events_example
