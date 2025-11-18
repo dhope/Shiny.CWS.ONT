@@ -1,5 +1,3 @@
-library(sf)
-library(dplyr)
 
 
 # Define server to create map with options

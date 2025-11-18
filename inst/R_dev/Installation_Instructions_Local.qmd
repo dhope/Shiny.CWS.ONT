@@ -31,7 +31,7 @@ install.packages("pak")
 Once you have the "pak" package installed, should be able to 
 run the following code to install the 'Shiny.CWS.ONT' package:
 ```{r}
-pak::pak("//int.ec.gc.ca/sys/InGEO/GW/EC1130MigBirds_OiseauxMig/ON_CWS/THEMES/Data_Explorer_Shiny/Shiny.CWS.ONT_0.1.0.zip")
+pak::pak(glue::glue("{path_to_shiny_zip}/Shiny.CWS.ONT_0.1.0.zip"))
 ```
 or  you could download the above file to your working directory and run:
 ```{r}
@@ -42,9 +42,9 @@ pak::pak("Shiny.CWS.ONT_0.1.0.zip")
 
 The R packages comes with a small sample of the data, which will allow you to test out the app. However to
 get the app running with the full dataset you'll need to copy the following file to your local computer and unpack in a working directory: 
-[Ctrl+Click here to open the Data_Explorer_Shiny folder](\\\\int.ec.gc.ca\\\sys\\\InGEO\\\GW\\\EC1130MigBirds_OiseauxMig\\\ON_CWS\\\THEMES\\\Data_Explorer_Shiny\\\\)
+[Ctrl+Click here to open the Data_Explorer_Shiny folder](`r paste0(path_to_shiny)`)
 
-[2025-02-05_Shiny_Data.7z](\\\\int.ec.gc.ca\sys\\\InGEO\\\GW\\\EC1130MigBirds_OiseauxMig\\\ON_CWS\\\THEMES\\\Data_Explorer_Shiny\\\2025-02-05_Shiny_Data.7z)
+[2025-02-05_Shiny_Data.7z](`r glue::glue("{path_to_shiny_zip}/Shiny.CWS.ONT_0.1.0.zip")`)
 
 
 ## To run the app:
@@ -74,11 +74,11 @@ data loaded.
 If you run into issues you can help improve and maintain the app by letting us know.
 This can be done by 
 by creating a bug report form at the following folder (Ctrl + Click to open):
-[BUG_REPORTS](\\int.ec.gc.ca\sys\InGEO\GW\EC1130MigBirds_OiseauxMig\ON_CWS\THEMES\Data_Explorer_Shiny\BUG_REPORTS). You will find a template for the bug report there.
+[BUG_REPORTS](`r glue::glue("{path_to_shiny_zip}/BUG_REPORTS")`). You will find a template for the bug report there.
 
 
 If there are specific features you'd like to see in the app you can complete a feature
-request here: [FEATURE_REQUESTS](\\int.ec.gc.ca\sys\InGEO\GW\EC1130MigBirds_OiseauxMig\ON_CWS\THEMES\Data_Explorer_Shiny\FEATURE_REQUESTS). A template is also available here. 
+request here: [FEATURE_REQUESTS](`r glue::glue("{path_to_shiny_zip}/FEATURE_REQUESTS")`). A template is also available here. 
 
 Completed forms can be emailed to [david.hope@ec.gc.ca](mailto:david.hope@ec.gc.ca) or left in the above
 folders.
