@@ -3,10 +3,10 @@ project_status <- glue::glue("{dat_loc}/project_status.rds") |>
 compile_date <- glue::glue("{dat_loc}/project_status.rds") |>
   file.info() |> dplyr::pull(mtime) |> lubridate::as_date()
 
-spp_list <- readr::read_csv(glue::glue("{dat_loc}/obba_significant_species_list.csv")) |>
-  janitor::clean_names()
+# spp_list <- readr::read_csv(glue::glue("{dat_loc2}/obba_significant_species_list.csv")) |>
+#   janitor::clean_names()
 
-spp_core <- readr::read_csv(glue::glue("{dat_loc}/ECCC_Avian_Core_20241025.csv"), col_types = readr::cols()) |>
+spp_core <- readr::read_csv(glue::glue("{dat_loc2}/ECCC_Avian_Core_20241025.csv"), col_types = readr::cols()) |>
   dplyr::mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
   dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
   dplyr::mutate(TC_L = dplyr::case_when(
@@ -20,6 +20,8 @@ spp_core <- readr::read_csv(glue::glue("{dat_loc}/ECCC_Avian_Core_20241025.csv")
 
   ) )
 
+all_counts_core <- readr::read_rds(glue::glue("{dat_loc}/counts.rds"))
+spp_list <- distinct(all_counts_core, english_name =species_name_clean)
 non_vocal_spp <- c("Wilson's Snipe",
                    "Yellow-bellied Sapsucker",
                    "Downy Woodpecker",
@@ -63,7 +65,7 @@ all_events <- readr::read_rds(glue::glue("{dat_loc}/all_events.rds")) |>
     ) )
 
 
-withr::with_seed(2025-10-23,{
+withr::with_seed(2025-12-17,{
   all_events_example <- dplyr::slice_sample(all_events, n= 5, by = c(project,year))})
 
  # usethis::use_data(all_events_example, overwrite = T, internal = T)
@@ -76,7 +78,7 @@ meta_breeding <- naturecounts::meta_breeding_codes()
 # usethis::use_data(meta_breeding,
 #                   overwrite = T, internal = T)
 
-all_counts_core_example <- readr::read_rds(glue::glue("{dat_loc}/counts.rds")) |>
+all_counts_core_example <- all_counts_core |>
   # dplyr::bind_rows(list(data_boreal_2016$counts,
   #                data_boreal_2012$counts) ) |>
   dplyr::filter(event_id %in% all_events_example$event_id &
@@ -108,7 +110,7 @@ locations_example <- readr::read_rds(glue::glue("{dat_loc}/locations.rds") )|>
 
 usethis::use_data(all_counts_core_example,all_events_example,
                   locations_example,meta_breeding, spp_core,
-                  project_status,
+                  project_status,compile_date,
                   spp_list,
                   non_vocal_spp,overwrite = T, internal = T)
 
