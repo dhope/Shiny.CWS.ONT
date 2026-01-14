@@ -219,7 +219,8 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
 
                         ## Input: Choose dataset ----
                         selectInput("dataset", "Choose a dataset:",
-                                    choices = c("locations", "effort", "species_observations")),
+                                    choices = c("locations", "effort", "species_observations",
+                                                "proportion_of_sites_obs")),
 
                         # Button
                         downloadButton("downloadData", "Download")

@@ -187,6 +187,10 @@ server <- function(input, output, session) {
 
   })
 
+
+
+
+
   ## Species summary -----------------
   species_summary <- reactive({
     active_events <- pull(filtered_events(), event_id)
@@ -235,6 +239,18 @@ server <- function(input, output, session) {
   )
 
 
+  proportion_of_sites <- reactive({
+    count(species_summary(),species_name_clean) |>
+      mutate(prop_obs = n/nrow(sites_summarize())) |>
+      left_join(
+        species_summary() |>
+          mutate(p_obs_records = n_observations/n) |>
+          summarize(mean_pobs = mean(p_obs_records, na.rm=T),
+                    sd_pobs = sd(p_obs_records, na.rm=T),
+                    n_sites = n(), .by = species_name_clean
+          ), by = join_by(species_name_clean)
+      )
+  })
 
 
 
@@ -553,7 +569,8 @@ server <- function(input, output, session) {
     switch(input$dataset,
            "locations" = sites_summarize(),
            "effort" = filtered_events(),
-           "species_observations" = species_summary())
+           "species_observations" = species_summary(),
+           "proportion_of_sites_obs" = proportion_of_sites())
 
   })
 
