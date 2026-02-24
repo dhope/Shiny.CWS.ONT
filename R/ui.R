@@ -236,7 +236,11 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                       )
 
                     )
-)
+),
+header =
+tags$script(HTML(glue::glue("var header = $('.navbar> .container-fluid');
+                       header.append('<div style=\"float:right\"><h3>Data compile date: {.cws_env$comple_date}</h3></div>');
+                       console.log(header)")))
 )
 }
 

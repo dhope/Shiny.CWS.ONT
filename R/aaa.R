@@ -28,7 +28,7 @@ initData <- function(){
                                                          "Awaiting processing")) |>
   dplyr::pull(project)
 
-.cws_env$comple_date <- compile_date
+.cws_env$comple_date <- lubridate::stamp("1 March 1999", orders = 'dmy', quiet = T)(compile_date)
 
 
 .cws_env$all_events <- all_events_example
