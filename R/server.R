@@ -175,7 +175,7 @@ server <- function(input, output, session) {
   ## Reactive to summarize by site based on settings ------------
   sites_summarize <- reactive({
     filtered_events() |>
-      dplyr::count(loc_id,longitude,
+      dplyr::count(site_id,longitude,
                    latitude,
                    source,
                    type,
@@ -329,7 +329,7 @@ server <- function(input, output, session) {
              dplyr::left_join(species_summary(),
                               by = dplyr::join_by(project, location,
                                                   source, type, longitude,
-                                                  latitude, loc_id)) |>
+                                                  latitude, site_id)) |>
              tidyr::replace_na(list(max_total_count=0)),
            aes(max_total_count)) +
       geom_histogram(binwidth = 1) +
@@ -341,16 +341,16 @@ server <- function(input, output, session) {
 # Populate the map ------------------
 
   ## Show a popup at the given location ---
-  showPopup <- function(loc_id, lat, lng) {
+  showPopup <- function(site_id, lat, lng) {
     ll <- sites_summarize()
-    selectedloc <- ll[ll$loc_id == loc_id,]
+    selectedloc <- ll[ll$site_id == site_id,]
     content <- as.character(tagList(
       tags$h4("Location:", (paste(selectedloc$location, sep = ", ") )),
       tags$h6("Source: ", paste(selectedloc$source, sep = ", ") ),
       tags$h6("Project: ", paste(selectedloc$project, sep = ", ") ),
       tags$h6("Type: ", paste(selectedloc$type, sep = ", ") ) ,
       tags$h6("N: ", paste(selectedloc$n, sep = ", ") ) ) )
-    leafletProxy("map") %>% addPopups(lng, lat, content, layerId = loc_id)
+    leafletProxy("map") %>% addPopups(lng, lat, content, layerId = site_id)
   }
 
   ## Add markers -------
@@ -435,7 +435,7 @@ server <- function(input, output, session) {
       if(input$data_layer == "Species Observations" || input$data_layer == "Community Builder") {
         {if(input$show_effort){
           addCircles(., ~longitude, ~latitude,
-                   layerId=~loc_id,radius = point_size*1000,
+                   layerId=~site_id,radius = point_size*1000,
                    data = obsInBounds(),color = 'grey',
                    weight = case_when(input$map_zoom <=4 ~1,
                                       input$map_zoom ==5 ~2,
@@ -448,7 +448,7 @@ server <- function(input, output, session) {
           addCircles( ~longitude, ~latitude,
                            data = species_summary(),
                            # clusterOptions = add_clusters,
-                           layerId=~loc_id,popup= lab_counts,
+                           layerId=~site_id,popup= lab_counts,
                       radius = point_size*3000,
                            # stroke=FALSE, fillOpacity=1,
                            color=pal(colourDataspp),
@@ -456,7 +456,7 @@ server <- function(input, output, session) {
 
           # addAwesomeMarkers( ~longitude, ~latitude,data = species_summary(),
           #                    clusterOptions = add_clusters,
-          #                    layerId=~loc_id,popup= lab_counts,
+          #                    layerId=~site_id,popup= lab_counts,
           #                    icon = awesomeIcons(
           #                      icon = 'ios-close',
           #                      iconColor = 'black',
@@ -465,7 +465,7 @@ server <- function(input, output, session) {
           #                    )
        # addMarkers( ~longitude, ~latitude,data = species_summary(),
        #             clusterOptions = add_clusters,
-       #             layerId=~loc_id,popup= lab_counts,
+       #             layerId=~site_id,popup= lab_counts,
        #             # stroke=FALSE, #fillOpacity=0.4
        #             color=pal(colourData)
         ) }
@@ -476,7 +476,7 @@ server <- function(input, output, session) {
       {
       if(input$includesurveyed){
         addCircles(., ~longitude, ~latitude,
-                   # layerId=~loc_id,
+                   # layerId=~site_id,
                    data = .cws_env$locs_only,
                    color = 'darkgrey',
                    weight = case_when(input$map_zoom <=4 ~1,
@@ -491,7 +491,7 @@ server <- function(input, output, session) {
       } else{.}} %>% {
       if(input$cluster){
         addCircleMarkers(., ~longitude, ~latitude,
-                   layerId=~loc_id,
+                   layerId=~site_id,
                    radius=point_size,
                    data =  sites_summarize(),
                    clusterOptions = add_clusters,
@@ -500,7 +500,7 @@ server <- function(input, output, session) {
       } else{
       addCircles(., ~longitude, ~latitude,
                   radius=radius,
-                  layerId=~loc_id,
+                  layerId=~site_id,
                  data =  sites_summarize(),
                  stroke=FALSE, fillOpacity=1,
                  fillColor=pal(colourData))

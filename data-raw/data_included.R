@@ -6,22 +6,24 @@ compile_date <- glue::glue("{dat_loc}/project_status.rds") |>
 # spp_list <- readr::read_csv(glue::glue("{dat_loc2}/obba_significant_species_list.csv")) |>
 #   janitor::clean_names()
 
-spp_core <- readr::read_csv(glue::glue("{dat_loc2}/ECCC_Avian_Core_20241025.csv"), col_types = readr::cols()) |>
-  dplyr::mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
-  dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
-  dplyr::mutate(TC_L = dplyr::case_when(
-    TC == "LA"~ "Landbirds",
-    TC == "SH"~ "Shorebirds",
-    TC == "WB" ~ "Waterbirds",
-    TC == "WB-InMa" ~ "Waterbirds - Inland",
-    TC == "WB-Sea" ~ "Seabirds",
-    TC == "WF" ~ "Waterfowl",
-    TRUE ~ "Non-migratory"
-
-  ) )
+# spp_core <- readr::read_csv(glue::glue("{dat_loc}/Avian_Core_20251124.csv"), col_types = readr::cols()) |>
+#   janitor::clean_names() |>
+#   dplyr::mutate(TC = stringr::str_sub(technical_committees, 1L, 2L),
+#                 concept_id = glue::glue("avibase-{stringr::str_sub(avibase_id,1L, 8L)}")) |>
+#   dplyr::select(english_name,TC, cosewic_status, scientific_name,sara_status,concept_id) |>
+#   dplyr::mutate(TC_L = dplyr::case_when(
+#     TC == "LA"~ "Landbirds",
+#     TC == "SH"~ "Shorebirds",
+#     TC == "WB" ~ "Waterbirds",
+#     TC == "WB-InMa" ~ "Waterbirds - Inland",
+#     TC == "WB-Sea" ~ "Seabirds",
+#     TC == "WF" ~ "Waterfowl",
+#     TRUE ~ "Non-migratory"
+#
+#   ) )
 
 all_counts_core <- readr::read_rds(glue::glue("{dat_loc}/counts.rds"))
-spp_list <- distinct(all_counts_core, english_name =species_name_clean)
+spp_list <- distinct(all_counts_core, english_name =species_name_clean, common_id, TC_L )
 non_vocal_spp <- c("Wilson's Snipe",
                    "Yellow-bellied Sapsucker",
                    "Downy Woodpecker",
@@ -47,9 +49,9 @@ all_events <- readr::read_rds(glue::glue("{dat_loc}/all_events.rds")) |>
       project %in% project_status$project[project_status$data_processor=="CWS-ON-PS"]~"Visual scanning",
       TRUE ~ type
     ),
-    loc_id = as.numeric(as.factor((paste0(location,source,
-                                          type, project,
-                                          longitude, latitude)))),
+    # loc_id = as.numeric(as.factor((paste0(location,source,
+    #                                       type, project,
+    #                                       longitude, latitude)))),
     Time_period =dplyr::case_when(
       t2ss >= -60 & t2ss <= 150~"Dusk",
       t2sr >= -70 & t2sr <= 220 ~"Dawn",
@@ -84,7 +86,7 @@ all_counts_core_example <- all_counts_core |>
   dplyr::filter(event_id %in% all_events_example$event_id &
                   stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
                   species_name_clean %in% spp_list$english_name) |>  #TODO maybe allow these to be added later
-  dplyr::left_join(spp_core, by = dplyr::join_by(species_name_clean == English_Name)) |>
+  # dplyr::left_join(spp_core, by = dplyr::join_by(species_name_clean==english_name)) |>
   dplyr::left_join(meta_breeding,
                    by= dplyr::join_by(breeding_rank==rank,BreedingBirdAtlasCode==breeding_code )) |>
   dplyr::mutate( category =tidyr::replace_na(category,"None"),
@@ -105,7 +107,8 @@ all_counts_core_example <- all_counts_core |>
 library(sf)
 
 locations_example <- readr::read_rds(glue::glue("{dat_loc}/locations.rds") )|>
-  dplyr::filter(location %in% all_events_example$location)
+  dplyr::filter(location %in% all_events_example$location) |>
+  distinct(move_type, site_id, geometry)
 
 
 usethis::use_data(all_counts_core_example,all_events_example,

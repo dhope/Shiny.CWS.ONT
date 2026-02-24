@@ -41,15 +41,15 @@ initData <- function(){
 
 .cws_env$all_species <- tibble(species = (.cws_env$all_counts_core$species_name_clean |> factor() |>
                                    forcats::fct_infreq() |> unique() |> sort()) ) |>
-  dplyr::mutate(English_Name = as.character(species)) |>
-  left_join(.cws_env$spp_core,by = join_by(English_Name))
+  dplyr::mutate(english_name = as.character(species)) |>
+  left_join(.cws_env$spp_core,by = join_by(english_name))
 .cws_env$all_time_periods <- unique(.cws_env$all_events$Time_period)
 .cws_env$all_time_periods <- .cws_env$all_time_periods[stringr::str_detect(.cws_env$all_time_periods,
                                                          "Missing", negate=T)]
 
 .cws_env$locs_only <- .cws_env$locations[.cws_env$locations$project %in% .cws_env$in_field,]
 
-.cws_env$f <- .cws_env$spp_core |> dplyr::filter(English_Name %in% .cws_env$all_species$species) |>
+.cws_env$f <- .cws_env$spp_core |> dplyr::filter(english_name %in% .cws_env$all_species$species) |>
   dplyr::distinct(TC, TC_L)
 .cws_env$fl <- .cws_env$f$TC
 names(.cws_env$fl) <- .cws_env$f$TC_L

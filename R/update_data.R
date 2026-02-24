@@ -52,11 +52,12 @@ update_data <- function(base_folder_path =NULL,
 
     if(!is.null(spp_core_csv)){
     .cws_env$spp_core <-
-      spp_core_csv |>
-      readr::read_csv(col_types = readr::cols()) |>
-      dplyr::mutate(TC = stringr::str_sub(Technical_Committees, 1L, 2L)) |>
-      dplyr::select(English_Name,TC, COSEWIC_Species, SARA_Species) |>
-      dplyr::mutate(TC_L = case_when(
+      readr::read_csv(spp_core_csv, col_types = readr::cols()) |>
+      janitor::clean_names() |>
+      dplyr::mutate(TC = stringr::str_sub(technical_committees, 1L, 2L),
+                    concept_id = glue::glue("avibase-{stringr::str_sub(avibase_id,1L, 8L)}")) |>
+      dplyr::select(english_name,TC, cosewic_status, sara_status,concept_id) |>
+      dplyr::mutate(TC_L = dplyr::case_when(
         TC == "LA"~ "Landbirds",
         TC == "SH"~ "Shorebirds",
         TC == "WB" ~ "Waterbirds",
@@ -64,7 +65,10 @@ update_data <- function(base_folder_path =NULL,
         TC == "WB-Sea" ~ "Seabirds",
         TC == "WF" ~ "Waterfowl",
         TRUE ~ "Non-migratory"
+
       ) )
+
+
     }
 
 
@@ -94,9 +98,9 @@ update_data <- function(base_folder_path =NULL,
             project %in% .cws_env$project_status$project[.cws_env$project_status$data_processor=="CWS-ON-PS"]~"Visual scanning",
             TRUE ~ type
           ),
-          loc_id = as.numeric(as.factor((paste0(location,source,
-                                                type, project,
-                                                longitude, latitude)))),
+          # loc_id = as.numeric(as.factor((paste0(location,source,
+          #                                       type, project,
+          #                                       longitude, latitude)))),
           Time_period =dplyr::case_when(
             t2ss >= -60 & t2ss <= 150~"Dusk",
             t2sr >= -70 & t2sr <= 220 ~"Dawn",
@@ -127,7 +131,7 @@ update_data <- function(base_folder_path =NULL,
       dplyr::filter(event_id %in% .cws_env$all_events$event_id &
                       stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
                       species_name_clean %in% .cws_env$spp_list$english_name) |>  #TODO maybe allow these to be added later
-      dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == English_Name)) |>
+      dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == english_name)) |>
       dplyr::left_join(meta_breeding,
                        by= dplyr::join_by(BreedingBirdAtlasCode==breeding_code )) |>
       dplyr::mutate( category =tidyr::replace_na(category,"None"),
@@ -161,8 +165,8 @@ update_data <- function(base_folder_path =NULL,
 
     .cws_env$all_species <- tibble(species = (.cws_env$all_counts_core$species_name_clean |> factor() |>
                                                 forcats::fct_infreq() |> unique() |> sort()) ) |>
-      dplyr::mutate(English_Name = as.character(species)) |>
-      left_join(.cws_env$spp_core,by = join_by(English_Name))
+      dplyr::mutate(english_name = as.character(species)) |>
+      left_join(.cws_env$spp_core,by = join_by(english_name))
     # print(.cws_env$all_species)
     .cws_env$all_time_periods <- unique(.cws_env$all_events$Time_period)
     .cws_env$all_time_periods <- .cws_env$all_time_periods[stringr::str_detect(.cws_env$all_time_periods,
@@ -170,7 +174,7 @@ update_data <- function(base_folder_path =NULL,
     .cws_env$locs_only <- .cws_env$locations[.cws_env$locations$project %in% .cws_env$in_field,]
 
 
-    .cws_env$f <- .cws_env$spp_core |> dplyr::filter(English_Name %in% .cws_env$all_species$species) |>
+    .cws_env$f <- .cws_env$spp_core |> dplyr::filter(english_name %in% .cws_env$all_species$species) |>
       dplyr::distinct(TC, TC_L)
     .cws_env$fl <- .cws_env$f$TC
     names(.cws_env$fl) <- .cws_env$f$TC_L
