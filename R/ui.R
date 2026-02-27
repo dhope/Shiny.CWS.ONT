@@ -24,7 +24,7 @@ ui_fun <- function(){ navbarPage("Data Explorer", id="nav",
                                                                        "Checklist",
                                                                        "Point Count"),inline = T
                        ),
-                       sliderInput('years', "Years included", value = c(2021, 2024),
+                       sliderInput('years', "Years included", value = c(2021, 2025),
                                    min = min(get_env_ob("all_events")$year, na.rm = T),
                                    max =max(get_env_ob("all_events")$year, na.rm = T), sep = ""),
                        dateRangeInput('daterange',"Range of dates (ignore year)",
