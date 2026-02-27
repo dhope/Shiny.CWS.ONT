@@ -22,5 +22,12 @@ remotes::install_github(
 file.copy(system.file("extdata/run_shiny_app.R",package = 'Shiny.CWS.ONT'), ".")
 if(Sys.getenv("RSTUDIO") == "1"){
   rstudioapi::navigateToFile("run_shiny_app.R")}
+
+if(all(c('all_events.rds', 'Avian_Core_20251124.csv',
+'cluster_df.rds', 'counts.rds', 'counts_extra.rds',
+'locations.rds', 'locations_pre_cluster.rds',
+'project_status.rds', 'spp_codes.rds') %in% list.files("forShiny"))){
+  unlink("forShiny.zip")
+}
 message("------ Done! ----------------------------")
 message("Source the 'run_shiny_app.R' file to update and run the app")
