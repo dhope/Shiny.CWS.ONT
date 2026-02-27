@@ -2,7 +2,7 @@
 # source("https://raw.githubusercontent.com/LandSciTech/sdmEvaluationTool/refs/heads/main/setup.R")
 
 message("=========================================")
-message("   Installing the SDM Evaluation Tool")
+message("   Installing the CWS Ontario Shiny App")
 message("=========================================")
 message("------ Downloading results --------------")
 if(!file.exists("forShiny.zip")) stop("Download 'forShiny.zip' and place in working directory")
