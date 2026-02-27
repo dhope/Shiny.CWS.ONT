@@ -112,7 +112,7 @@ locations_example <- readr::read_rds(glue::glue("{dat_loc}/locations.rds") )|>
 
 
 usethis::use_data(all_counts_core_example,all_events_example,
-                  locations_example,meta_breeding, spp_core,
+                  locations_example,meta_breeding, #spp_core,
                   project_status,compile_date,
                   spp_list,
                   non_vocal_spp,overwrite = T, internal = T)

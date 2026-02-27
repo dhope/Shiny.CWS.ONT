@@ -81,11 +81,11 @@ server <- function(input, output, session) {
   observe({
     x <- input$spp_comm
     if(x == "All"){
-      x <- .cws_env$all_species$species
+      x <- .cws_env$spp_list$english_name
     } else{
-      x <- .cws_env$all_species |>
-        dplyr::filter(TC == input$spp_comm) |>
-        pull(species)
+      x <- .cws_env$spp_list |>
+        dplyr::filter(TC_L == input$spp_comm) |>
+        pull(english_name)
     }
     # Can also set the label and select items
     updateSelectInput(session,"species",# "Select species to examine",

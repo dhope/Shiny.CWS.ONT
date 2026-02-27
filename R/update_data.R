@@ -2,7 +2,6 @@
 #'
 #' @param base_folder_path path to location of files
 #' @param spp_list_csv
-#' @param spp_core_csv
 #' @param project_status_rds
 #' @param all_events_rds
 #' @param all_counts_rds
@@ -13,7 +12,7 @@
 #' @examples
 update_data <- function(base_folder_path =NULL,
                         spp_list_csv=NULL,
-                        spp_core_csv = NULL,
+                        # spp_core_csv = NULL,
                         project_status_rds = NULL,
                         all_events_rds = NULL,
                         all_counts_rds = NULL,
@@ -47,29 +46,29 @@ update_data <- function(base_folder_path =NULL,
     if(!is.null(spp_list_csv)){
     .cws_env$spp_list <- spp_list_csv |>
       readr::read_csv(col_types = readr::cols()) |>
-      janitor::clean_names()
+      janitor::clean_names()  |> replace_na(list(TC_L = "None"))
     }
 
-    if(!is.null(spp_core_csv)){
-    .cws_env$spp_core <-
-      readr::read_csv(spp_core_csv, col_types = readr::cols()) |>
-      janitor::clean_names() |>
-      dplyr::mutate(TC = stringr::str_sub(technical_committees, 1L, 2L),
-                    concept_id = glue::glue("avibase-{stringr::str_sub(avibase_id,1L, 8L)}")) |>
-      dplyr::select(english_name,TC, cosewic_status, sara_status,concept_id) |>
-      dplyr::mutate(TC_L = dplyr::case_when(
-        TC == "LA"~ "Landbirds",
-        TC == "SH"~ "Shorebirds",
-        TC == "WB" ~ "Waterbirds",
-        TC == "WB-InMa" ~ "Waterbirds - Inland",
-        TC == "WB-Sea" ~ "Seabirds",
-        TC == "WF" ~ "Waterfowl",
-        TRUE ~ "Non-migratory"
-
-      ) )
-
-
-    }
+    # if(!is.null(spp_core_csv)){
+    # .cws_env$spp_core <-
+    #   readr::read_csv(spp_core_csv, col_types = readr::cols()) |>
+    #   janitor::clean_names() |>
+    #   dplyr::mutate(TC = stringr::str_sub(technical_committees, 1L, 2L),
+    #                 concept_id = glue::glue("avibase-{stringr::str_sub(avibase_id,1L, 8L)}")) |>
+    #   dplyr::select(english_name,TC, cosewic_status, sara_status,concept_id) |>
+    #   dplyr::mutate(TC_L = dplyr::case_when(
+    #     TC == "LA"~ "Landbirds",
+    #     TC == "SH"~ "Shorebirds",
+    #     TC == "WB" ~ "Waterbirds",
+    #     TC == "WB-InMa" ~ "Waterbirds - Inland",
+    #     TC == "WB-Sea" ~ "Seabirds",
+    #     TC == "WF" ~ "Waterfowl",
+    #     TRUE ~ "Non-migratory"
+    #
+    #   ) )
+    #
+    #
+    # }
 
 
     if(!is.null(project_status_rds)){
@@ -86,8 +85,10 @@ update_data <- function(base_folder_path =NULL,
 
 
     if(!is.null(all_events_rds)){
+      # browser()
       # All locations and events
       .cws_env$all_events <- readr::read_rds(all_events_rds) |>
+        tidyr::replace_na(list(type="None")) |>
         # dplyr::bind_rows(list(
         #   data_boreal_2016$events,
         #   data_boreal_2012$events)) |>
@@ -131,7 +132,7 @@ update_data <- function(base_folder_path =NULL,
       dplyr::filter(event_id %in% .cws_env$all_events$event_id &
                       stringr::str_detect(species_name_clean, "Unidentified\\s", negate=T) &
                       species_name_clean %in% .cws_env$spp_list$english_name) |>  #TODO maybe allow these to be added later
-      dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == english_name)) |>
+      # dplyr::left_join(.cws_env$spp_core, by = dplyr::join_by(species_name_clean == english_name)) |>
       dplyr::left_join(meta_breeding,
                        by= dplyr::join_by(BreedingBirdAtlasCode==breeding_code )) |>
       dplyr::mutate( category =tidyr::replace_na(category,"None"),
@@ -163,10 +164,10 @@ update_data <- function(base_folder_path =NULL,
 
 
 
-    .cws_env$all_species <- tibble(species = (.cws_env$all_counts_core$species_name_clean |> factor() |>
-                                                forcats::fct_infreq() |> unique() |> sort()) ) |>
-      dplyr::mutate(english_name = as.character(species)) |>
-      left_join(.cws_env$spp_core,by = join_by(english_name))
+    # .cws_env$all_species <- tibble(species = (.cws_env$all_counts_core$species_name_clean |> factor() |>
+    #                                             forcats::fct_infreq() |> unique() |> sort()) ) |>
+    #   dplyr::mutate(english_name = as.character(species)) |>
+    #   left_join(.cws_env$spp_core,by = join_by(english_name))
     # print(.cws_env$all_species)
     .cws_env$all_time_periods <- unique(.cws_env$all_events$Time_period)
     .cws_env$all_time_periods <- .cws_env$all_time_periods[stringr::str_detect(.cws_env$all_time_periods,
@@ -174,9 +175,9 @@ update_data <- function(base_folder_path =NULL,
     .cws_env$locs_only <- .cws_env$locations[.cws_env$locations$project %in% .cws_env$in_field,]
 
 
-    .cws_env$f <- .cws_env$spp_core |> dplyr::filter(english_name %in% .cws_env$all_species$species) |>
-      dplyr::distinct(TC, TC_L)
-    .cws_env$fl <- .cws_env$f$TC
-    names(.cws_env$fl) <- .cws_env$f$TC_L
+    # .cws_env$f <- .cws_env$spp_list |> dplyr::filter(english_name %in% .cws_env$all_species$species) |>
+    #   dplyr::distinct(TC, TC_L)
+    .cws_env$fl <- .cws_env$spp_list$TC_L |> unique()
+    # names(.cws_env$fl) <- .cws_env$f$TC_L
   }
 
