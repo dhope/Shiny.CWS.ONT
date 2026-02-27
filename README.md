@@ -4,6 +4,7 @@
 # Shiny.CWS.ONT
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The goal of Shiny.CWS.ONT is to allow users to explore data collected by
@@ -35,18 +36,24 @@ pkgload::load_all()
 CWS_ON_app()
 ```
 
-To update the data in the app, you can use the `update_data()` function. For example:
+## Local install with data
 
-```r
-update_data(base_folder_path = "/path/to/files/",
-                        spp_list_csv= "spp_list.csv",
-                        spp_core_csv = "spp_core.csv",
-                        project_status_rds = "project_status.rds",
-                        all_events_rds = "all_events.rds",
-                        all_counts_rds = "all_counts.rds",
-                        locations_rds = "locations.rds")
-run_shiny_app()
+If you have downloaded the data zip file you can set up the data and R
+package as follows:
 
+Before installation, first create a new RStudio Project where you’ll
+store the data required for this tool. To do so, select File \> New
+Project. When prompted, select New Directory and New Project. Under the
+field Directory name, type in CWS_ONT_Shiny, then, click on the Browse
+button and select a location you’ll remember (e.g.,
+c:/users/user_name/work). Put the `forShiny.zip` file into this folder.
+
+Open the Rstudio package and run the following code to install the
+required packages:
+
+``` r
+source("https://raw.githubusercontent.com/dhope/Shiny.CWS.ONT/refs/heads/main/inst/extdata/install_shiny_app.R")
 ```
 
-
+This should create a file named `run_shiny_app.R` that will give you
+instructions on updating the data and running the app.
